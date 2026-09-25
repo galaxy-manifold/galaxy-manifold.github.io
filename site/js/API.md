@@ -22,7 +22,7 @@ manifest → app = createApp({manifest, base}) → await initUI(app) → await i
   (adds class `done`, then `hidden`). Set `app.config.splash.auto = false` during `initUI`
   to take over; call `app.hideSplash()` yourself when ready.
 - **First view.** If no view action ran before `app.load()`, the first paint shows a random
-  tour-set frame and `app.start()` animates into MZR (2.6 s; ×0.3 under
+  tour-set frame and `app.start()` animates into SFMS (2.6 s; ×0.3 under
   `prefers-reduced-motion`). Any view action called before `start()` (e.g. URL restore
   during `initUI` or in a `data:ready` handler) cancels the arrival. Actions called before the
   first paint apply instantly; camera fits requested before data load are deferred to the

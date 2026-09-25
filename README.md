@@ -90,6 +90,8 @@ These are not built yet:
 
 - Axes from a convolutional network's image features, reduced to a few dimensions with UMAP.
 - An axis from The Sequencer (Baron and Ménard 2021) applied to the optical spectra.
+- Axes based on the large-scale environmental graph's top eigenvalues.
+- More axes showing standard morphology parmaeters beyond concentration like asymmetry/smoothness or Gini-M20.
 
 The page reads its properties from `site/data/manifest.json`, so a new axis needs only a new data column and a manifest entry. The code handles up to 24 properties and has a group reserved for learned axes.
 

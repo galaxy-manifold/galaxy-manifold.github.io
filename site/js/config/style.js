@@ -65,7 +65,7 @@ export const MOTION = {
   ease: [0.65, 0, 0.35, 1],   // cubic-bezier for view changes
   viewMs: 1100,               // default setAxes / preset duration
   fitMs: 600,
-  arrivalMs: 2600,            // first-load arrival into MZR
+  arrivalMs: 2600,            // first-load arrival into SFMS
   uiMs: 200,
   reducedScale: 0.3,          // durations × this under prefers-reduced-motion
   tourRadPerSec: 0.35,        // grand-tour angular speed at speed = 1

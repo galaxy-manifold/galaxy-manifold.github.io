@@ -639,7 +639,7 @@ Axes are physical combos. Each preset may set a color, a filter and literature i
 
 The literature ids are indicative. The literature agent fixes the final ids, and presets must
 reference ids that exist, or the UI simply ignores missing ones. The initial view on first
-load is an animated arrival into **MZR** from a random frame.
+load is an animated arrival into **SFMS** from a random frame.
 
 Default tour set: `logM, logsSFR, OH, logR50, C, gr, D4000, logSigV, logMh`.
 
@@ -753,3 +753,4 @@ Default tour set: `logM, logsSFR, OH, logR50, C, gr, D4000, logSigV, logMh`.
 - 2026-09-24 · overlays · §15 axes: titles draw unicode super- and subscripts and the `_x` notation as raised or lowered text, because Space Mono lacks those glyphs. A multi-term label after a sign gets parentheses (`− 1.02 (12+log(O/H))`), trailing terms are dropped with `…` to fit, and a dark halo keeps titles legible over the glow. Rulers, titles and labels stop at the inspector drawer while it is open.
 - 2026-09-24 · overlays · §12 API, additive: `app.overlays` (ruler drop zones, `highlightAxis`, `dropDim`, handles to the literature, trends, lasso and mosaic, `stats()`) and a `pursuit` event {phase, result}. See the header of `site/js/view/overlays/index.js`.
 - 2026-09-25 · ui · §13.4 and §12.2, additive: `filters.needColor` hides galaxies without a value of the color variable (the color dim missing, or category code 0). It follows the color as it changes, so switching from O/H to log M★ shows everyone again. It is set by a funnel beside the legend, the `V` key and the `cv=1` URL key, and Reset clears it. While it is on with a category color, the legend hides the ∅ chip. `filterParams()` gains `need` (the required dim index), which the shader, the projection kernel, the prefix sample and the literature fitOffset all apply.
+- 2026-09-25 · core · §14: the default preset (first-load arrival, Reset with no preset, and URL restore without a view) is now `sfms` instead of `mzr`.

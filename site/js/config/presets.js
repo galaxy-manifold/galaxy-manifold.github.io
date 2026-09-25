@@ -42,7 +42,7 @@ export const PRESETS = [
     x: { D4000: 1 }, y: { HdA: 1 }, color: 'logsSFR', filter: null, literature: [] },
 ];
 
-export const DEFAULT_PRESET = 'mzr';
+export const DEFAULT_PRESET = 'sfms';
 
 export function presetById(id) {
   return PRESETS.find((p) => p.id === id) || null;
