@@ -28,12 +28,15 @@ export function initHeader(app, mount, ui) {
     meta: `${fmtInt(app.data.n)} in ${app.data.manifest.title || 'the sample'}`,
   }), 'bottom');
 
+  const byline = h('a', { class: 'tb-by', href: 'https://jwuphysics.github.io', target: '_blank', rel: 'noopener' },
+    h('span', { text: 'Built by ' }), h('b', { text: 'John Wu' }));
+
   const carts = h('div', { class: 'tb-carts' });
   const about = h('button', { class: 'tb-about ibtn', type: 'button', 'aria-label': 'About, credits and shortcuts', html: icon('info') });
   setTip(about, { title: 'About', sub: 'Data, literature, shortcuts, caveats', key: '?' }, 'bottom');
   about.addEventListener('click', () => ui.about?.toggle());
 
-  mount.append(h('div', { class: 'tb' }, h('div', { class: 'tb-left' }, brand, badge), carts, about));
+  mount.append(h('div', { class: 'tb' }, h('div', { class: 'tb-left' }, brand, badge, byline), carts, about));
 
   const presets = initPresets(app, carts, ui);
 

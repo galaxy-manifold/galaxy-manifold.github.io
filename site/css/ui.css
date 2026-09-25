@@ -220,6 +220,20 @@ sub { font-size: 0.72em; line-height: 0; vertical-align: -0.28em; letter-spacing
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+.tb-by {
+  font: 400 11px/1 var(--font-ui);
+  letter-spacing: 0.02em;
+  color: var(--cream-3);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 160ms ease-out;
+}
+.tb-by b { font-weight: 500; color: var(--cream-2); transition: color 160ms ease-out; }
+.tb-by:hover b, .tb-by:focus-visible b { color: var(--orange); }
+.tb-by:focus-visible { outline: 1px dashed var(--orange); outline-offset: 3px; border-radius: 2px; }
+@media (max-width: 1239.98px) { .tb-by { display: none; } }
+.ab-foot a { color: var(--cream-2); text-decoration: none; border-bottom: 1px solid var(--line); }
+.ab-foot a:hover { color: var(--orange); border-bottom-color: var(--orange); }
 .tb-badge i { font-style: italic; color: var(--cream-3); }
 .tb-badge b { font-weight: 400; color: var(--cream-2); }
 .tb-badge.tick b { animation: gm-tick 600ms ease-out; }

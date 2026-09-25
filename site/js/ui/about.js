@@ -141,7 +141,8 @@ export function initAbout(app, ui) {
       sec('Relations', lit),
       sec('Dimensions', dims),
       h('footer', { class: 'ab-foot' },
-        h('span', { text: m.created ? `data ${m.created}` : '' }),
+        h('span', null, 'Built by ', h('a', { href: 'https://jwuphysics.github.io', target: '_blank', rel: 'noopener', text: 'John Wu' }),
+          m.created ? ` · data ${m.created}` : ''),
         h('span', { text: `${data.D} dimensions · ${data.categories.length} categories · ${fmtInt(data.n)} galaxies` })));
 
     root = h('div', { class: 'about', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'About Galaxy Manifold' },
