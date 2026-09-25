@@ -1,5 +1,7 @@
 # Galaxy Manifold
 
+Conceptualized by [John Wu](https://jwuphysics.github.io) and implemented by Claude Opus 5.5.
+
 Galaxy Manifold is a website for exploring galaxy scaling relations. It shows 657,057 galaxies from the SDSS Main Galaxy Sample. Each galaxy is a point in a space of 20 measured properties, e.g., stellar mass. The screen shows a two-dimensional linear projection of that space.
 
 You can rotate the projection by hand, let it rotate on its own, or jump to a known view such as the mass-metallicity relation. Each jump is an animated rotation through the full space, so you can watch one relation turn into another.
