@@ -1,0 +1,99 @@
+/* Overlays (DESIGN.md §15): the DOM parts of the overlay layer — literature labels and their
+   hover card. Rulers, trends, curves, the lasso and the mosaic are drawn on the #overlay and
+   #tiles canvases (js/view/overlays/). */
+
+/* full-stage layer inside #stage-ui that never takes pointer events itself */
+#stage-ui > .ov-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* tiny literature label at a curve end (mustard, mono) with a swatch of the curve's line
+   style; hover shows name + citation. Width = text + 6 px padding + 13 px swatch (SWATCH_W in
+   js/view/overlays/literature.js). */
+.ov-layer .ov-lit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 14px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  color: var(--mustard);
+  background: rgba(11, 14, 19, 0.6);
+  text-decoration: none;
+  pointer-events: auto;
+  cursor: pointer;
+  will-change: transform;
+  transition: background-color var(--t-ui) var(--ease-ui), color var(--t-ui) var(--ease-ui), box-shadow var(--t-ui) var(--ease-ui);
+}
+.ov-layer .ov-lit .ov-sw {
+  flex: none;
+  width: 10px;
+  height: 6px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+}
+.ov-layer .ov-lit:hover,
+.ov-layer .ov-lit:focus-visible {
+  color: #f4d27a;
+  background: rgba(226, 178, 58, 0.14);
+  box-shadow: 0 0 0 1px rgba(226, 178, 58, 0.5);
+  outline: none;
+}
+
+/* hover card: double-rule frame, name in Jost, citation in mono */
+.ov-layer .ov-tip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  max-width: min(320px, calc(100% - 16px));
+  padding: 8px 11px 9px;
+  border: 1px solid var(--hair-25);
+  border-radius: var(--r-sm);
+  outline: 1px solid var(--hair-15);
+  outline-offset: 2px;
+  background: var(--bg-2);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  color: var(--cream);
+  pointer-events: none;
+}
+.ov-layer .ov-tip[hidden] { display: none; }
+.ov-layer .ov-tip-name {
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  line-height: 1.3;
+}
+.ov-layer .ov-tip-cite {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--cream-2);
+}
+
+.ov-layer .ov-tip-off {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid var(--hair-15);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--mustard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ov-layer .ov-lit { transition: none; }
+}

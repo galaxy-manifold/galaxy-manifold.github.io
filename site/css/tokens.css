@@ -1,0 +1,83 @@
+/* Design tokens — "mid-century mission control" (DESIGN.md §3). Mirrored in js/config/style.js. */
+:root {
+  color-scheme: dark;
+
+  /* surfaces & ink */
+  --bg: #0b0e13;
+  --bg-2: #11161f;
+  --bg-3: #18202c;
+  --line: #273142;
+  --cream: #efe6d2;
+  --cream-2: #b8af9a;
+  --cream-3: #7a7465;
+
+  /* accents */
+  --orange: #e8743b;
+  --mustard: #e2b23a;
+  --teal: #3aa6a0;
+  --sky: #6fa8dc;
+  --coral: #de5b52;
+  --olive: #a3b35b;
+  --plum: #b07aa1;
+
+  /* hairlines (cream at 15–35%) */
+  --hair-15: rgba(239, 230, 210, 0.15);
+  --hair-25: rgba(239, 230, 210, 0.25);
+  --hair-35: rgba(239, 230, 210, 0.35);
+
+  /* dimension groups */
+  --g-stars: var(--orange);
+  --g-sf: var(--sky);
+  --g-chem: var(--mustard);
+  --g-struct: var(--teal);
+  --g-kin: var(--coral);
+  --g-gas: #8fd0e8;
+  --g-env: var(--plum);
+  --g-lines: var(--olive);
+  --g-obs: var(--cream-3);
+  --g-learned: var(--cream);
+
+  /* category colours (§7) */
+  --bpt-1: #6fa8dc; --bpt-2: #9cc3e4; --bpt-3: #3aa6a0; --bpt-4: #de5b52;
+  --bpt-5: #e8743b; --bpt-6: #e2b23a; --bpt-7: #7a7465;
+  --env-1: #efe6d2; --env-2: #e2b23a; --env-3: #b07aa1;
+  --morph-1: #de5b52; --morph-2: #6fa8dc; --morph-3: #7a7465;
+
+  /* type */
+  --font-display: 'Michroma', 'Eurostile', 'Microgramma', sans-serif;
+  --font-ui: 'Jost', 'Futura', 'Century Gothic', sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --fs-micro: 9px;
+  --fs-label: 10px;
+  --fs-ui: 12.5px;
+  --fs-value: 11px;
+  --track-display: 0.16em;
+
+  /* geometry */
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 12px;
+  --r-pill: 999px;
+  --stroke-icon: 1.5px;
+
+  /* layout (§12.4) */
+  --topbar-h: 52px;
+  --rail-w: 68px;
+  --console-h: 56px;
+  --inspector-w: 340px;
+  --rail-strip-h: 46px;
+  --grid-cell: 32px;
+
+  /* motion */
+  --ease-view: cubic-bezier(.65, 0, .35, 1);
+  --ease-ui: cubic-bezier(.2, .7, .3, 1);
+  --t-view: 1100ms;
+  --t-ui: 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-view: 330ms;
+    --t-ui: 60ms;
+  }
+}

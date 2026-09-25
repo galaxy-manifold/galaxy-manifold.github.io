@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Galaxy Manifold</title>
+  <meta name="description" content="Galaxy scaling relations as rotating projections of a high-dimensional manifold of SDSS galaxy properties.">
+  <meta name="theme-color" content="#0b0e13">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0e13'/%3E%3Cg stroke='%23e8743b' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M16 4v24M4 16h24M7.5 7.5l17 17M24.5 7.5l-17 17'/%3E%3C/g%3E%3Ccircle cx='16' cy='16' r='4' fill='%23efe6d2'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Michroma&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+  <!-- UI: tiny glyph-subset fallbacks (Greek, super/subscripts, ★ ☉ ⟨⟩ …) that Jost / Space Mono / Michroma lack -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Didact+Gothic&family=Noto+Sans:wght@400;500&family=Noto+Sans+Math&display=swap&text=%CE%B1%CE%B2%CE%B3%CE%B4%CE%B5%CE%B6%CE%B7%CE%B8%CE%B9%CE%BA%CE%BB%CE%BC%CE%BD%CE%BE%CE%BF%CF%80%CF%81%CF%83%CF%84%CF%85%CF%86%CF%87%CF%88%CF%89%CE%91%CE%92%CE%93%CE%94%CE%98%CE%9B%CE%9E%CE%A0%CE%A3%CE%A6%CE%A8%CE%A9%E2%81%B0%C2%B9%C2%B2%C2%B3%E2%81%B4%E2%81%B5%E2%81%B6%E2%81%B7%E2%81%B8%E2%81%B9%E2%81%BA%E2%81%BB%E2%81%BC%E2%81%BD%E2%81%BE%E2%81%BF%E2%81%B1%E2%82%80%E2%82%81%E2%82%82%E2%82%83%E2%82%84%E2%82%85%E2%82%86%E2%82%87%E2%82%88%E2%82%89%E2%82%8A%E2%82%8B%E2%82%8C%E2%82%8D%E2%82%8E%E2%82%90%E2%82%91%E2%82%92%E2%82%93%E2%82%99%E2%82%95%E2%82%96%E2%82%97%E2%82%98%E2%82%9A%E2%82%9B%E2%82%9C%E1%B4%AC%E1%B4%AE%E1%B4%B0%E1%B4%B1%E1%B4%B3%E1%B4%B4%E1%B4%B5%E1%B4%B6%E1%B4%B7%E1%B4%B8%E1%B4%B9%E1%B4%BA%E1%B4%BC%E1%B4%BE%E1%B4%BF%E1%B5%80%E1%B5%81%E1%B5%82%E2%98%85%E2%98%86%E2%98%89%E2%8A%99%E2%9F%A8%E2%9F%A9%E2%86%92%E2%86%90%E2%86%91%E2%86%93%E2%86%94%E2%88%9D%E2%88%BC%E2%89%88%E2%89%A4%E2%89%A5%C2%B1%C3%97%C2%B7%E2%88%92%E2%80%93%E2%80%94%E2%80%B2%E2%80%B3%C2%B0%C3%85%E2%81%84%E2%88%85%E2%8A%98">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/core.css">
+  <link rel="stylesheet" href="css/ui.css">
+  <link rel="stylesheet" href="css/overlays.css">
+  <link rel="modulepreload" href="js/app.js">
+  <link rel="modulepreload" href="js/gl/renderer.js">
+  <link rel="modulepreload" href="js/math/frame.js">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <div id="app">
+    <header id="topbar"></header>
+    <nav id="rail" aria-label="Dimensions"></nav>
+    <main id="stage" aria-label="Projection of the galaxy manifold">
+      <canvas id="gl" aria-hidden="true"></canvas><canvas id="tiles" aria-hidden="true"></canvas><canvas id="overlay" aria-hidden="true"></canvas>
+      <div id="stage-ui"></div>
+    </main>
+    <aside id="inspector" aria-label="Inspector"></aside>
+    <footer id="console"></footer>
+  </div>
+  <div id="splash" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+    <div class="gm-splash">
+      <svg class="gm-splash-mark" viewBox="-130 -130 260 260" aria-hidden="true">
+        <circle class="sp-ring" r="124"/>
+        <circle class="sp-ticks" r="116"/>
+        <circle class="sp-ticks-major" r="116"/>
+        <circle class="sp-track" r="104"/>
+        <circle class="sp-progress" r="104"/>
+        <g class="sp-orbits">
+          <g transform="rotate(-24)"><ellipse class="sp-orbit" rx="86" ry="27"/><circle class="sp-moon" r="3.4"><animateMotion dur="5.2s" repeatCount="indefinite" path="M86,0 A86,27 0 1,1 -86,0 A86,27 0 1,1 86,0"/></circle></g>
+          <g transform="rotate(38)"><ellipse class="sp-orbit" rx="86" ry="27"/><circle class="sp-moon sp-moon-b" r="2.3"><animateMotion dur="8.4s" repeatCount="indefinite" path="M-86,0 A86,27 0 1,0 86,0 A86,27 0 1,0 -86,0"/></circle></g>
+        </g>
+        <g class="sp-burst">
+          <path class="sp-rays" d="M0 -13L0 -60M4.97 -12.01L14.54 -35.11M9.19 -9.19L35.36 -35.36M12.01 -4.97L35.11 -14.54M13 0L60 0M12.01 4.97L35.11 14.54M9.19 9.19L35.36 35.36M4.97 12.01L14.54 35.11M0 13L0 60M-4.97 12.01L-14.54 35.11M-9.19 9.19L-35.36 35.36M-12.01 4.97L-35.11 14.54M-13 0L-60 0M-12.01 -4.97L-35.11 -14.54M-9.19 -9.19L-35.36 -35.36M-4.97 -12.01L-14.54 -35.11"/>
+          <g class="sp-tips"><circle cy="-60" r="2.6"/><circle cx="35.36" cy="-35.36" r="1.9"/><circle cx="60" r="2.6"/><circle cx="35.36" cy="35.36" r="1.9"/><circle cy="60" r="2.6"/><circle cx="-35.36" cy="35.36" r="1.9"/><circle cx="-60" r="2.6"/><circle cx="-35.36" cy="-35.36" r="1.9"/></g>
+        </g>
+        <circle class="sp-hub-ring" r="7.5"/>
+        <circle class="sp-hub" r="4"/>
+      </svg>
+      <div class="gm-splash-word" aria-hidden="true">GALAXY MANIFOLD</div>
+    </div>
+  </div>
+  <noscript><div class="core-fatal"><div class="core-fatal-card"><div class="core-fatal-title">JavaScript required</div></div></div></noscript>
+</body>
+</html>

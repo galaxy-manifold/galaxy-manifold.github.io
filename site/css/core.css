@@ -1,0 +1,253 @@
+/* Core layout and stage (DESIGN.md §3.3, §12.4). Component styling lives in ui.css / overlays.css. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--cream);
+  font-family: var(--font-ui);
+  font-size: var(--fs-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior: none;
+}
+
+button, input, select { font: inherit; color: inherit; }
+
+/* ------------------------------------------------------------------ app grid */
+#app {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  grid-template-rows: var(--topbar-h) minmax(0, 1fr) var(--console-h);
+  grid-template-areas:
+    "top top"
+    "rail stage"
+    "console console";
+  background: var(--bg);
+}
+
+#topbar {
+  grid-area: top;
+  position: relative;
+  z-index: 20;
+  min-width: 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+#rail {
+  grid-area: rail;
+  position: relative;
+  z-index: 15;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+}
+#rail::-webkit-scrollbar { display: none; }
+
+#console {
+  grid-area: console;
+  position: relative;
+  z-index: 20;
+  min-width: 0;
+  background: var(--bg-2);
+  border-top: 1px solid var(--line);
+}
+
+/* ------------------------------------------------------------------ stage */
+#stage {
+  grid-area: stage;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  background-color: var(--bg);
+  /* soft vignette over an engineering-paper grid (major every 4 cells) */
+  background-image:
+    radial-gradient(ellipse 120% 95% at 50% 45%, rgba(11, 14, 19, 0) 55%, rgba(4, 6, 9, 0.55) 100%),
+    linear-gradient(rgba(239, 230, 210, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(239, 230, 210, 0.045) 1px, transparent 1px),
+    linear-gradient(rgba(239, 230, 210, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(239, 230, 210, 0.022) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    calc(var(--grid-cell) * 4) calc(var(--grid-cell) * 4),
+    calc(var(--grid-cell) * 4) calc(var(--grid-cell) * 4),
+    var(--grid-cell) var(--grid-cell),
+    var(--grid-cell) var(--grid-cell);
+  background-position: center;
+}
+
+#stage > canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+#gl { z-index: 1; }
+#tiles { z-index: 3; pointer-events: none; }
+#overlay { z-index: 4; pointer-events: none; }
+
+/* faint printed grain above the glow (≤3%) */
+#stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: screen;
+}
+
+#stage-ui {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;   /* children opt back in */
+}
+#stage-ui > * { pointer-events: auto; }
+
+#stage.gl-lost #gl { opacity: 0.25; transition: opacity var(--t-ui) ease-out; }
+
+/* ------------------------------------------------------------------ inspector drawer */
+#inspector {
+  position: fixed;
+  z-index: 30;
+  top: var(--topbar-h);
+  right: 0;
+  bottom: var(--console-h);
+  width: min(var(--inspector-w), 100vw);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--bg-2);
+  border-left: 1px solid var(--line);
+  transform: translateX(102%);
+  visibility: hidden;
+  transition: transform 260ms var(--ease-view), visibility 0s linear 260ms;
+}
+#inspector.open,
+#inspector[data-open="true"] {
+  transform: none;
+  visibility: visible;
+  transition: transform 260ms var(--ease-view), visibility 0s;
+}
+
+/* ------------------------------------------------------------------ narrow screens (<760px) */
+@media (max-width: 759.98px) {
+  #app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: var(--topbar-h) var(--rail-strip-h) minmax(0, 1fr) var(--console-h);
+    grid-template-areas: "top" "rail" "stage" "console";
+  }
+  #rail {
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  #console { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+  #console::-webkit-scrollbar { display: none; }
+  #inspector {
+    top: auto;
+    left: 0;
+    width: 100%;
+    height: min(62vh, 560px);
+    bottom: 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    transform: translateY(102%);
+  }
+  #inspector.open,
+  #inspector[data-open="true"] { transform: none; }
+}
+
+/* ------------------------------------------------------------------ default splash (core) */
+#splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  transition: opacity 700ms var(--ease-view), visibility 0s linear 700ms;
+}
+#splash.done { opacity: 0; visibility: hidden; pointer-events: none; }
+
+.core-splash { display: grid; justify-items: center; gap: 18px; }
+.core-splash svg { width: 132px; height: 132px; overflow: visible; }
+.core-splash svg * { fill: none; stroke-linecap: round; }
+.core-splash .track { stroke: var(--line); stroke-width: 1.2; }
+.core-splash .progress {
+  stroke: var(--orange);
+  stroke-width: 1.6;
+  stroke-dasharray: 289.03;
+  stroke-dashoffset: 289.03;
+  transform: rotate(-90deg);
+  transform-origin: 60px 60px;
+  transition: stroke-dashoffset 240ms var(--ease-ui);
+}
+.core-splash .burst path { stroke: var(--cream-2); stroke-width: 1.2; }
+.core-splash .burst .short { stroke: var(--mustard); }
+.core-splash .burst { transform-origin: 60px 60px; animation: core-spin 14s linear infinite; }
+.core-splash .core { fill: var(--cream); stroke: none; }
+.core-splash .orbit { transform-origin: 60px 60px; animation: core-spin 5s linear infinite reverse; }
+.core-splash .orbit ellipse { stroke: var(--hair-35); stroke-width: 1; }
+.core-splash .orbit .moon { fill: var(--orange); stroke: none; }
+.core-splash .wordmark {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  color: var(--cream-2);
+  padding-left: 0.32em;
+}
+@keyframes core-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .core-splash .burst, .core-splash .orbit { animation: none; }
+}
+
+/* ------------------------------------------------------------------ fatal message */
+.core-fatal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--bg);
+}
+.core-fatal-card {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  max-width: 420px;
+  padding: 28px 32px;
+  text-align: center;
+  border: 1px solid var(--hair-25);
+  border-radius: var(--r-lg);
+  outline: 1px solid var(--hair-15);
+  outline-offset: 4px;
+}
+.core-fatal-card svg { width: 44px; height: 44px; fill: none; stroke: var(--orange); stroke-width: 1.5; stroke-linecap: round; }
+.core-fatal-title {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cream);
+}
+.core-fatal-hint { color: var(--cream-2); font-size: 12px; line-height: 1.5; font-family: var(--font-mono); word-break: break-word; }
