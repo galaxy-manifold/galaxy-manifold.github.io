@@ -46,7 +46,7 @@ function cdfPct(q, x) {
 }
 
 /**
- * Percentile interval [lo, hi] covered by raw code v (the code spans half a quantisation step
+ * Percentile interval [lo, hi] covered by raw code v (the code spans half a quantization step
  * either side of its value). Continuous data gives a sliver; a grid value spans its whole tie.
  */
 function pctRange(d, v) {

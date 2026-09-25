@@ -1,4 +1,4 @@
-// Canvas-2D drawing helpers shared by the overlays: colours with alpha, device-pixel snapping
+// Canvas-2D drawing helpers shared by the overlays: colors with alpha, device-pixel snapping
 // for crisp hairlines, fonts, and polylines broken at NaN.
 
 import { COLORS, FONTS, hexToRgb } from '../../config/style.js';
@@ -9,7 +9,7 @@ export const UI = FONTS.ui;
 
 const rgbCache = new Map();
 
-/** 'rgba(r,g,b,a)' for a hex colour. */
+/** 'rgba(r,g,b,a)' for a hex color. */
 export function rgba(hex, a) {
   let c = rgbCache.get(hex);
   if (!c) {

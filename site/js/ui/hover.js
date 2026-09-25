@@ -1,6 +1,6 @@
 // Hover card (DESIGN.md §13.7): after a 120 ms dwell, a small cream-framed card with the
 // thumbnail (a thumbnail galaxy within 12 px is preferred) and three values: x, y and the
-// colour variable. Never shown while the view is moving.
+// color variable. Never shown while the view is moving.
 
 import { h, clamp, fmtFixed } from './dom.js';
 import { axisValue } from '../math/frame.js';

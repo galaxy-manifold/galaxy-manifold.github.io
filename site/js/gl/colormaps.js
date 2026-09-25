@@ -39,7 +39,7 @@ function controlLab(name) {
   return c;
 }
 
-/** Colour of map `name` at t ∈ [0, 1] as sRGB [r, g, b] in 0..1. */
+/** Color of map `name` at t ∈ [0, 1] as sRGB [r, g, b] in 0..1. */
 export function sampleColormap(name, t, reverse = false) {
   const pts = controlLab(name);
   let u = Math.min(1, Math.max(0, reverse ? 1 - t : t)) * (pts.length - 1);

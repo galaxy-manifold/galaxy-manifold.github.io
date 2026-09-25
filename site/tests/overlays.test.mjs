@@ -179,7 +179,7 @@ describe('rulers', () => {
     assert.ok(t.minor.length > t.major.length);
   });
 
-  test('titles parenthesise a multi-term label after the first term', () => {
+  test('titles parenthesize a multi-term label after the first term', () => {
     const F = fm.frameFromCombos({ pEl: 1, OH: -0.3 }, { logR50: 1 }, DIMS).F;
     const info = fm.axisInfo(F, 0, DIMS);
     const t = titleSegments(info, DIMS).map((s) => s.text).join('');
@@ -283,7 +283,7 @@ describe('trends', () => {
     assert.deepEqual(Array.from(s).map((x) => (Number.isNaN(x) ? 'nan' : x)), [1, 1, 'nan', 2, 2, 2]);
   });
 
-  test('computeTrends recovers a median line and orders colour groups', () => {
+  test('computeTrends recovers a median line and orders color groups', () => {
     const rng = mulberry32(5);
     const n = 20000;
     const xs = new Float64Array(n), ys = new Float64Array(n), cv = new Float64Array(n);
@@ -295,7 +295,7 @@ describe('trends', () => {
     const ci = { mode: 'continuous', cmap: 'redshift', reverse: false, range: [-2, 2] };
     const t = computeTrends(xs, ys, n, { cv, cs: { mode: 'continuous', ci }, bins: 16, x0: -2, x1: 2 });
     assert.equal(t.groups.length, 4);
-    const b = 8;   // bin centred near x = 0.125
+    const b = 8;   // bin centered near x = 0.125
     assert.ok(Math.abs(t.mid[b] - 0.5 * t.centers[b]) < 0.03, `median ${t.mid[b]} at ${t.centers[b]}`);
     assert.ok(t.lo[b] < t.mid[b] && t.mid[b] < t.hi[b]);
     for (let g = 1; g < 4; g++) assert.ok(t.groups[g].mid[b] > t.groups[g - 1].mid[b]);

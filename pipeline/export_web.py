@@ -464,9 +464,9 @@ def quicklook() -> None:
          xl="log M★ [M☉]", yl="log sSFR [1/yr]")
     ax.legend(loc="lower left")
 
-    # 5 colour-mass
+    # 5 color-mass
     ax = axs[4]
-    dens(ax, col["logM"], col["gr"], (8.0, 12.0), (0.1, 1.2), title="colour – mass (Lim+17)",
+    dens(ax, col["logM"], col["gr"], (8.0, 12.0), (0.1, 1.2), title="color – mass (Lim+17)",
          xl="log M★ [M☉]", yl="⁰·¹(g−r)", yedges=np.arange(0.0995, 1.2, 0.009))
     ax.legend(loc="upper left")
 
@@ -723,7 +723,7 @@ def report() -> None:
     w(f"Galaxy Zoo 1. {f(gz_um.sum())} galaxies have no Galaxy Zoo 1 entry. "
       f"{pc(gz_um_special, 0)} of them are special plate spectra, which are "
       f"{pc(special_frac, 1)} of the whole sample.\n")
-    w("Lim+17. The Lim+17 SDSS catalogue covers only the contiguous northern Galactic cap. "
+    w("Lim+17. The Lim+17 SDSS catalog covers only the contiguous northern Galactic cap. "
       "Every galaxy at z ≤ 0.2 without a Lim+17 match lies in the southern stripes, at RA 300 "
       f"to 60 degrees. Away from those stripes the match rate at z ≤ 0.2 is {pc(lim_north)}. "
       f"In the imaging sample the exact objID match rate is {pc(core_exact, 1)}. The positional match "
@@ -744,12 +744,12 @@ def report() -> None:
                  "(all of them also outside the range)",
         "HdA": f"{f(b['index_errors']['hda_err_nonpositive'])} with LICK_HD_A_ERR = -1 "
                "(value stored as exactly 0)",
-        "gr": f"{f(b['lim_color_placeholders']['set_missing'])} Lim+17 placeholder colours; "
+        "gr": f"{f(b['lim_color_placeholders']['set_missing'])} Lim+17 placeholder colors; "
               "no Lim+17 match for the rest",
         "OH": "MPA-JHU gives it for star-forming galaxies only",
         "OH_PP04": f"MPA class 1 with S/N > 3 in all four lines; "
                    f"{f(b['pp04']['o3n2_out_of_validity'])} outside -1 < O3N2 < 1.9",
-        "logSigV": f"fibre σ outside 40 to 500 km/s, or error above 0.3σ "
+        "logSigV": f"fiber σ outside 40 to 500 km/s, or error above 0.3σ "
                    f"({f(b['sigv']['v_disp_zero'])} have σ = 0)",
         "logfHI": "ALFALFA detections only",
         "logMh": "no Lim+17 match",
@@ -863,11 +863,11 @@ def report() -> None:
       "LICK_HD_A exactly 0 with an error of -1, which marks a failed measurement. We read "
       "LICK_HD_A_ERR and D4000_N_ERR from `data/galSpecIndx-dr8.fits` and require a positive "
       "error.")
-    w("- Lim+17 placeholder colours. Lim+17 gives galaxies far from the colour and luminosity "
-      "relation a fixed colour. The values 0.832 and 0.889 appear 2,783 and 2,565 times in "
-      "Lim+17, while the neighbouring values appear about 800 and 1,270 times. At those two "
-      "values we set the colour to missing when the galaxy's own DR17 model g-r differs by "
-      f"more than 0.2 mag. This removed {f(lc['set_missing'])} colours, close to the excess of "
+    w("- Lim+17 placeholder colors. Lim+17 gives galaxies far from the color and luminosity "
+      "relation a fixed color. The values 0.832 and 0.889 appear 2,783 and 2,565 times in "
+      "Lim+17, while the neighboring values appear about 800 and 1,270 times. At those two "
+      "values we set the color to missing when the galaxy's own DR17 model g-r differs by "
+      f"more than 0.2 mag. This removed {f(lc['set_missing'])} colors, close to the excess of "
       "about 2,230 in our sample.")
     w(f"- Repeat spectra. {f(cu['drop'])} galaxies had two spectra in the parent sample. See "
       "\"Sample selection\".")

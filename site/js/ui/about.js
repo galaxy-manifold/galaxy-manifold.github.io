@@ -25,7 +25,8 @@ const KEYS = [
   [['M'], 'glow / mosaic'],
   [['T'], 'trends'],
   [['B'], 'literature'],
-  [['C'], 'next colour (⇧ previous)'],
+  [['C'], 'next color (⇧ previous)'],
+  [['V'], 'only galaxies with a color value'],
   [['F'], 'fit'],
   [['R'], 'reset'],
   [['Esc'], 'clear / close'],
@@ -57,7 +58,7 @@ export function initAbout(app, ui) {
       .replace(/\s*;\s*/g, ' · ');
   }
 
-  /** Text with `key` spans: dimension keys become their label, tinted with the group colour. */
+  /** Text with `key` spans: dimension keys become their label, tinted with the group color. */
   function richText(str) {
     return String(str || '').split(/`([^`]+)`/).map((part, k) => {
       if (k % 2 === 0) return part;

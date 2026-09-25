@@ -1,5 +1,5 @@
 // Projection pursuit "tighten" (DESIGN.md §15). Keep the y direction fixed and search the x
-// direction, within the span of at most five dimensions, that minimises the robust scatter
+// direction, within the span of at most five dimensions, that minimizes the robust scatter
 // (1.4826·MAD) of y about its running median in x. Pure functions, no DOM; the search is a
 // generator so the caller can time-slice it (see js/view/overlays/tighten.js).
 // Unit-tested in site/tests/overlays.test.mjs.
@@ -66,7 +66,7 @@ function grow(s, n, bins) {
  * Robust scatter of Y about its running median in X.
  * Bins: `bins` equal-width bins over the [qlo, qhi] quantile range of X (points outside are
  * ignored), a bin's median counts when it holds ≥ minCount points, and the running median is
- * the piecewise-linear curve through the bin centres (flat past the end bins, interpolated
+ * the piecewise-linear curve through the bin centers (flat past the end bins, interpolated
  * over sparse bins). The scatter is 1.4826 × MAD of the residuals, which is invariant to the
  * scale and sign of X.
  * opts.residuals (Float64Array n, optional) receives Y − curve (NaN for ignored points).
@@ -233,7 +233,7 @@ export function rSquared(y, cols, n = y.length) {
 // ------------------------------------------------------------------ Nelder–Mead
 
 /**
- * Nelder–Mead minimisation as a generator (yields after the initial simplex and after every
+ * Nelder–Mead minimization as a generator (yields after the initial simplex and after every
  * iteration; the return value is {x, f, evals, iters}). Non-finite objective values count
  * as +∞. opts: step (number or per-coordinate array), maxEvals, tolX, tolF.
  */
@@ -315,7 +315,7 @@ export function runSync(gen) {
 // ------------------------------------------------------------------ the tighten search
 
 /**
- * 1-D minimisation of f(a) on [lo, hi]: a coarse grid with spacing `step`, then golden-section
+ * 1-D minimization of f(a) on [lo, hi]: a coarse grid with spacing `step`, then golden-section
  * refinement around the best grid point. Generator (yields every few evaluations); returns
  * [a, f(a)]. Keeps a = `keep` (e.g. 0) when nothing beats f(keep).
  */
@@ -354,7 +354,7 @@ export function* scan1d(f, lo, hi, step, { keep = 0, fKeep = f(keep), iters = 12
  *   its running median in the current x) · scanRows 10000 · grid [−4, 4] step 0.5 (u-space
  *   coefficient relative to the reference) · pruneTol 0.004 · minRows 400.
  * Each round screens the candidates with a 1-D search on its coefficient, adds the best one
- * if it gains enough, and re-optimises all free coefficients jointly with Nelder–Mead. At the
+ * if it gains enough, and re-optimizes all free coefficients jointly with Nelder–Mead. At the
  * end, dims whose removal barely matters are pruned and the rest is refined.
  * Returns {chosen: [col index] (ref first), coef: Float64Array (u-space, ref = 1), sigma0 (the
  * starting direction on the final rows), sigma, n, evals, ranked, trace: [{key, gain}] (dims

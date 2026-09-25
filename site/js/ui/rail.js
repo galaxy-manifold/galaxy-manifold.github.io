@@ -1,8 +1,8 @@
 // Rail of dimension tokens (DESIGN.md §13.2). Pill tokens (`short`) grouped by `group` with a
-// thin group-coloured bar. States: in view (w_d > 0.1: filled with the group colour, fill
-// opacity ∝ w_d), in tour set (outlined), colour variable (◐ marker). Hover highlights the
-// compass spoke; click opens a radial icon menu (→X, →Y, ◐ colour, ⟲ tour set); drag onto the
-// X/Y strips or the compass. Categories sit below as colour-only tokens.
+// thin group-colored bar. States: in view (w_d > 0.1: filled with the group color, fill
+// opacity ∝ w_d), in tour set (outlined), color variable (◐ marker). Hover highlights the
+// compass spoke; click opens a radial icon menu (→X, →Y, ◐ color, ⟲ tour set); drag onto the
+// X/Y strips or the compass. Categories sit below as color-only tokens.
 
 import { h, rafBatch, isNarrow } from './dom.js';
 import { setTip } from './tooltip.js';
@@ -59,7 +59,7 @@ export function initRail(app, mount, ui) {
         class: 'tok tok-cat',
         type: 'button',
         'data-cat': spec.key,
-        'aria-label': `Colour by ${spec.label}`,
+        'aria-label': `Color by ${spec.label}`,
         style: { '--stripe': `linear-gradient(90deg, ${stops})` },
       }, h('span', { class: 'tok-t', text: catToken(spec) }), h('i', { class: 'tok-stripe', 'aria-hidden': 'true' }),
       h('i', { class: 'tok-c', 'aria-hidden': 'true' }), h('i', { class: 'tok-f', 'aria-hidden': 'true' }));
@@ -134,7 +134,7 @@ export function initRail(app, mount, ui) {
     const m = openRadial(el, [
       { icon: 'toY', label: 'Put on the y axis', active: onlyY, onSelect: () => ui.dnd.setAxisTo('y', key) },
       { icon: 'toX', label: 'Put on the x axis', active: onlyX, onSelect: () => ui.dnd.setAxisTo('x', key) },
-      { icon: 'half', label: isColor ? 'Stop colouring' : 'Colour by this', active: isColor, onSelect: () => actions.setColor(isColor ? null : key) },
+      { icon: 'half', label: isColor ? 'Stop coloring' : 'Color by this', active: isColor, onSelect: () => actions.setColor(isColor ? null : key) },
       {
         icon: 'orbit',
         label: inTour ? 'Remove from the tour' : 'Add to the tour',

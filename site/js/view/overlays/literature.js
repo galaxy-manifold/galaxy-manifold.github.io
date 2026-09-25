@@ -218,7 +218,7 @@ export function createLiterature(app, ov) {
 
   // ------------------------------------------------------------------ fitOffset
   function currentFilterKey() {
-    const f = app.store.get().filters;
+    const f = app.filterParams();   // cached: a new object whenever the effective filter changes
     if (f !== lastFilters) {
       lastFilters = f;
       filterKey = JSON.stringify(f);
@@ -232,6 +232,7 @@ export function createLiterature(app, ov) {
     const fp = app.filterParams();
     const n = data.n;
     const z = fp.z, zc = z ? data.raw[z.dim] : null, zd = z ? data.dims[z.dim] : null;
+    const nc = fp.need >= 0 ? data.raw[fp.need] : null;
     const catCols = [];
     for (const c of data.categories) {
       if (c.slot < 0 || !data.cats[c.key]) continue;
@@ -249,6 +250,7 @@ export function createLiterature(app, ov) {
         const u = v * zd.ua + zd.ub;
         if (u < z.lo || u > z.hi) continue;
       }
+      if (nc && nc[i] === 0) continue;
       let pass = true;
       for (const [col, mk] of catCols) if (((mk >>> col[i]) & 1) === 0) { pass = false; break; }
       if (!pass) continue;

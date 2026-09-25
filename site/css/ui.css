@@ -730,7 +730,7 @@ html.dragging, html.dragging * { cursor: grabbing !important; }
 .rk-side[aria-pressed="true"] { color: #1a1510; }
 .rk-side .i { width: 17px; height: 17px; }
 
-/* colour dial */
+/* color dial */
 .con-color { gap: 12px; }
 .cdial {
   position: relative;
@@ -808,6 +808,7 @@ html.dragging, html.dragging * { cursor: grabbing !important; }
 .chip-sw { width: 8px; height: 8px; border-radius: 50%; background: var(--cc); box-shadow: 0 0 6px color-mix(in srgb, var(--cc) 55%, transparent); flex: none; }
 .chip.hollow .chip-sw { background: transparent; box-shadow: inset 0 0 0 1.6px var(--cc); }
 .chip.nil { font-family: var(--font-mono); }
+.chip[hidden] { display: none; }
 .chip.off { color: var(--cream-3); opacity: 0.55; }
 .chip.off .chip-sw { background: transparent; box-shadow: inset 0 0 0 1px var(--cream-3); }
 
@@ -880,6 +881,11 @@ html.dragging, html.dragging * { cursor: grabbing !important; }
 .tog[aria-pressed="true"]:hover { background: rgba(232, 116, 59, 0.14); color: #f08650; }
 .tog-share.copied { color: var(--olive); border-color: rgba(163, 179, 91, 0.45); }
 .tog-share.failed { color: var(--coral); }
+/* only galaxies with a color value (sits beside the legend) */
+.tog-need { width: 28px; height: 28px; margin-left: -4px; }
+.tog-need .i { width: 16px; height: 16px; }
+.tog-need.moot:not([aria-pressed="true"]) { color: var(--cream-3); opacity: 0.6; }
+.tog-need[hidden] { display: none; }
 
 /* z filter */
 .zf { display: flex; align-items: center; gap: 8px; }
@@ -925,7 +931,7 @@ html.dragging, html.dragging * { cursor: grabbing !important; }
 .zf.active .zf-v, .zf.dragging .zf-v, .zf-track:hover .zf-v { opacity: 1; }
 .zf.active .zf-v { color: var(--cream-2); }
 
-/* ------------------------------------------------------------------ colour popover */
+/* ------------------------------------------------------------------ color popover */
 .cpop {
   position: fixed;
   z-index: 76;

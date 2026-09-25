@@ -54,9 +54,9 @@ R_PETRO_MAX = 17.77                # (petroMag_r - extinction_r) <= 17.77, DR17 
 
 LIM_POS_MATCH_ARCSEC = 2.0         # positional fallback for galaxies without an exact objID match
 LIM_POS_MATCH_DZ = 0.01            # sanity check on |z_CMB(Lim) - z(SDSS)| for positional matches
-# Lim+17 gives galaxies > 3 sigma off the colour-luminosity median a fixed colour. Two values
-# carry that excess (0.832: 2,783 vs ~800 in neighbouring 0.001 bins; 0.889: 2,565 vs ~1,270).
-# At those values a colour is treated as a placeholder (missing) when the galaxy's own DR17
+# Lim+17 gives galaxies > 3 sigma off the color-luminosity median a fixed color. Two values
+# carry that excess (0.832: 2,783 vs ~800 in neighboring 0.001 bins; 0.889: 2,565 vs ~1,270).
+# At those values a color is treated as a placeholder (missing) when the galaxy's own DR17
 # extinction-corrected model g-r differs from it by more than this.
 LIM_COLOR_PLACEHOLDERS = (0.832, 0.889)
 LIM_COLOR_PLACEHOLDER_TOL = 0.2
@@ -72,7 +72,7 @@ PP04_A, PP04_B = 8.73, -0.32
 PP04_O3N2_RANGE = (-1.0, 1.9)
 # Schawinski et al. (2007) Seyfert/LINER line in the [NII]/Ha BPT plane
 S07_SLOPE, S07_ICPT = 1.05, 0.45
-# Jorgensen et al. (1995) aperture correction to R50/8; SDSS fibre radius 1.5"
+# Jorgensen et al. (1995) aperture correction to R50/8; SDSS fiber radius 1.5"
 J95_EXP = 0.04
 FIBER_RADIUS_ARCSEC = 1.5
 SIGV_MIN, SIGV_MAX, SIGV_MAXFRACERR = 40.0, 500.0, 0.3
@@ -160,20 +160,20 @@ DIMS = [
          desc="Stellar mass, MPA-JHU LGM_TOT_P50 (total, SED fits to ugriz), Kroupa IMF"),
     dict(key="logSFR", label="log SFR", short="SFR", unit="M☉ yr⁻¹", group="sf", min=-4.0,
          max=2.5, source="mpajhu",
-         desc="Star formation rate, MPA-JHU SFR_TOT_P50 (B04 in-fibre + Salim+07 out-of-fibre), "
+         desc="Star formation rate, MPA-JHU SFR_TOT_P50 (B04 in-fiber + Salim+07 out-of-fiber), "
               "Kroupa IMF"),
     dict(key="logsSFR", label="log sSFR", short="sSFR", unit="yr⁻¹", group="sf", min=-14.0,
          max=-8.0, source="mpajhu",
          desc="Specific SFR, MPA-JHU SPECSFR_TOT_P50"),
     dict(key="D4000", label="Dₙ4000", short="D4k", unit="", group="stars", min=0.8, max=2.6,
          source="mpajhu",
-         desc="Narrow 4000 Å break (Balogh+99), MPA-JHU D4000_N, 3″ fibre"),
+         desc="Narrow 4000 Å break (Balogh+99), MPA-JHU D4000_N, 3″ fiber"),
     dict(key="HdA", label="HδA", short="Hδ", unit="Å", group="stars", min=-6.0, max=12.0,
          source="mpajhu",
-         desc="Lick HδA absorption index, MPA-JHU LICK_HD_A, 3″ fibre"),
+         desc="Lick HδA absorption index, MPA-JHU LICK_HD_A, 3″ fiber"),
     dict(key="gr", label="⁰·¹(g−r)", short="g−r", unit="mag", group="stars", min=-0.2,
          max=1.4, source="lim17",
-         desc="g−r colour K-corrected to z=0.1, Lim+17 SDSS(M) galaxy catalogue (northern cap, "
+         desc="g−r color K-corrected to z=0.1, Lim+17 SDSS(M) galaxy catalog (northern cap, "
               "z≤0.2)"),
     dict(key="OH", label="12+log(O/H)", short="O/H", unit="", group="chem", min=7.6, max=9.5,
          source="mpajhu",
@@ -215,10 +215,10 @@ DIMS = [
               "(+0.155 dex)"),
     dict(key="N2Ha", label="log [NII]/Hα", short="N2", unit="", group="lines", min=-2.5,
          max=1.0, source="mpajhu",
-         desc="log [NII]6584/Hα, MPA-JHU fibre fluxes, S/N>3 in both (rescaled errors)"),
+         desc="log [NII]6584/Hα, MPA-JHU fiber fluxes, S/N>3 in both (rescaled errors)"),
     dict(key="O3Hb", label="log [OIII]/Hβ", short="O3", unit="", group="lines", min=-1.5,
          max=1.5, source="mpajhu",
-         desc="log [OIII]5007/Hβ, MPA-JHU fibre fluxes, S/N>3 in both (rescaled errors)"),
+         desc="log [OIII]5007/Hβ, MPA-JHU fiber fluxes, S/N>3 in both (rescaled errors)"),
     dict(key="z", label="z", short="z", unit="", group="obs", min=0.0, max=0.3,
          source="sdss",
          desc="Spectroscopic redshift (heliocentric), SDSS / MPA-JHU"),

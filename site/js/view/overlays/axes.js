@@ -1,7 +1,7 @@
 // Axis rulers (§15): hairline rulers along the bottom and left edges of the stage, physical
 // ticks at 1-2-5 steps in the combined axis units (§10), and live formula titles such as
 // "log M★ − 0.32 log SFR →" (bottom right) and "↑ 12+log(O/H)" (top left). Dimension names
-// in the titles are tinted with their group colour; unicode super/subscripts are drawn as
+// in the titles are tinted with their group color; unicode super/subscripts are drawn as
 // real raised/lowered text (text.js), and a multi-term label gets parentheses when it has a
 // coefficient ("− 1.02 (12+log(O/H))"). The rulers stop at the inspector drawer when it is
 // open. They are also drop zones for rail tokens (zoneAt / highlight) and show the tighten
@@ -36,8 +36,8 @@ export function rulerTicks(info, X0, X1, count) {
 }
 
 /**
- * Title as coloured segments: [{text, color, alpha}] (text may hold unicode scripts). Terms
- * after the first are signed; a label with a top-level + or − is parenthesised there.
+ * Title as colored segments: [{text, color, alpha}] (text may hold unicode scripts). Terms
+ * after the first are signed; a label with a top-level + or − is parenthesized there.
  */
 export function titleSegments(info, dims, { arrow = '', maxTerms = MAX_TERMS } = {}) {
   if (!info || !info.terms.length) return [];

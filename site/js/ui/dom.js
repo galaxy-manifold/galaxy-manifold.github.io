@@ -135,7 +135,7 @@ export function isNarrow() {
   return typeof matchMedia === 'function' && matchMedia('(max-width: 759.98px)').matches;
 }
 
-/** Hex colour → rgba() string. */
+/** Hex color → rgba() string. */
 export function rgba(hex, a) {
   const v = parseInt(hex.replace('#', ''), 16);
   return `rgba(${(v >> 16) & 255}, ${(v >> 8) & 255}, ${v & 255}, ${a})`;

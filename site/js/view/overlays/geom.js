@@ -39,7 +39,7 @@ export function pointInPolygon(poly, x, y) {
 
 /**
  * Scanline index of a polygon for fast even–odd tests of many points (O(log k) each).
- * Each horizontal band of height `step` is tested at its centre line, so answers can differ
+ * Each horizontal band of height `step` is tested at its center line, so answers can differ
  * from the exact test only within step/2 (vertically) of an edge.
  * Returns {bounds: [x0, x1, y0, y1], contains(x, y)}.
  */
@@ -141,7 +141,7 @@ export function nativeAxes(cx, cy, F) {
 
 /**
  * Positions p_k for preferred positions pref_k *in the given order*, with p_{k+1} − p_k ≥ gap,
- * minimising Σ (p_k − pref_k)² (isotonic regression of pref_k − k·gap by pool-adjacent-
+ * minimizing Σ (p_k − pref_k)² (isotonic regression of pref_k − k·gap by pool-adjacent-
  * violators), then shifted into [lo, hi] as a block when it fits (else started at lo).
  */
 export function spreadOrdered(pref, gap, lo = -Infinity, hi = Infinity) {
@@ -173,7 +173,7 @@ export function spreadOrdered(pref, gap, lo = -Infinity, hi = Infinity) {
 }
 
 /**
- * Spread 1-D positions so that sorted neighbours are at least `gap` apart (least squares,
+ * Spread 1-D positions so that sorted neighbors are at least `gap` apart (least squares,
  * order kept), staying inside [lo, hi] when there is room. Returns a new array in the input
  * order.
  */
@@ -319,7 +319,7 @@ export function groupIndex(v, edges) {
  * Most typical candidate per cell (§15): for each cell, the candidate whose standardized
  * vector is closest to the mean vector of the cell's candidates. Distance is the mean squared
  * difference over the dims valid for both (NaN = missing), so candidates with fewer valid
- * dims are not favoured. All candidates count toward the mean; only `eligible` ones (when
+ * dims are not favored. All candidates count toward the mean; only `eligible` ones (when
  * given) can be chosen.
  *   cellOf: Int32Array(K) cell id per candidate (−1 = none) · U: Float32Array(K·D), NaN missing
  * Returns Map(cellId → candidate index). Ties go to the lower index.
@@ -365,7 +365,7 @@ export function typicalPerCell(cellOf, U, D, eligible = null) {
   return out;
 }
 
-/** Stagger delays (ms) for tiles by distance from a centre, capped at maxMs. */
+/** Stagger delays (ms) for tiles by distance from a center, capped at maxMs. */
 export function staggerDelay(dx, dy, cell, perCell = 18, maxMs = 420) {
   return Math.min(maxMs, (Math.hypot(dx, dy) / Math.max(1, cell)) * perCell);
 }

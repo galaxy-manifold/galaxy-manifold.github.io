@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Synthetic galaxy catalogue in the exact site/data contract (DESIGN.md §5) for client dev.
+"""Synthetic galaxy catalog in the exact site/data contract (DESIGN.md §5) for client dev.
 
 Writes (default) site/data-synth/:
   manifest.json, dims/<key>.u16.gz, cats/<key>.u8.gz, meta/*.gz,
@@ -99,7 +99,7 @@ def k01(n2):
 
 
 def kpc_per_arcsec(z):
-    """Flat LCDM H0=70, Om0=0.3 (vectorised Simpson on a table)."""
+    """Flat LCDM H0=70, Om0=0.3 (vectorized Simpson on a table)."""
     zs = np.linspace(0, 0.35, 3501)
     ez = 1.0 / np.sqrt(0.3 * (1 + zs) ** 3 + 0.7)
     dc = np.concatenate([[0], np.cumsum(0.5 * (ez[1:] + ez[:-1]) * np.diff(zs))]) * 299792.458 / 70.0

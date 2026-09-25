@@ -1,5 +1,5 @@
 // app.pursuit.tighten(opts) (§15): keep y fixed and search x within the span of the current x
-// dims plus the tour-set dims, minimising the robust scatter of y about its running median in
+// dims plus the tour-set dims, minimizing the robust scatter of y about its running median in
 // x over a 20k visible subsample (math in js/math/pursuit.js, time-sliced here so the main
 // thread never blocks for more than ~8 ms). Then animate to the result.
 //
@@ -18,7 +18,7 @@
 //        minGain: 0.03, duration: 1400, animate: true}.
 // Resolves to the result {x, y, dims, coef, sigma0, sigma, improved, n, evals, added, screen,
 // alpha?, alphaAlone?} (sigma in y's physical units) when the view was tightened, and to
-// false when nothing changed (nothing to search, too few galaxies, no gain, cancelled, or the
+// false when nothing changed (nothing to search, too few galaxies, no gain, canceled, or the
 // view was moved while the search ran);
 // app.pursuit.last and the 'pursuit' event {phase: 'start'|'done'|'cancel', result} carry the
 // details either way.
@@ -52,7 +52,7 @@ function fmtSigma(v) {
 export function createTighten(app, ov, axes) {
   const data = app.data;
   let running = null;
-  let cancelled = false;
+  let canceled = false;
   let last = null;
 
   function waitSettle(timeout = 4000) {
@@ -71,7 +71,7 @@ export function createTighten(app, ov, axes) {
   function runSliced(gen, budget = 8) {
     return new Promise((resolve, reject) => {
       const step = () => {
-        if (cancelled) { resolve(null); return; }
+        if (canceled) { resolve(null); return; }
         const t0 = performance.now();
         try {
           for (;;) {
@@ -91,12 +91,12 @@ export function createTighten(app, ov, axes) {
 
   async function run(opts) {
     if (!data.loaded) return null;
-    cancelled = false;
+    canceled = false;
     app.events.emit('pursuit', { phase: 'start' });
     axes.scan(true);
     if (app.store.get().tour.playing) app.actions.tour.pause();
     const settled = await waitSettle();
-    if (cancelled || !settled) return null;
+    if (canceled || !settled) return null;
     const dims = data.dims, D = data.D;
     const F = Float64Array.from(app.frame);
     const frameVersion = app.frameVersion;
@@ -161,8 +161,8 @@ export function createTighten(app, ov, axes) {
     };
     const res = await runSliced(tightenSearch({ Y, cols, ref: 0, allowed, maxDims, minGain: opts.minGain ?? 0.03 }));
     // the user moved the view meanwhile: the result belongs to a view that is gone
-    if (app.frameVersion !== frameVersion) cancelled = true;
-    if (!res || cancelled) return null;
+    if (app.frameVersion !== frameVersion) canceled = true;
+    if (!res || canceled) return null;
 
     // u-space weights → physical combo (reference coefficient ±1, orientation kept)
     const w = new Float64Array(D);
@@ -226,7 +226,7 @@ export function createTighten(app, ov, axes) {
         })
         .then((r) => {
           if (r == null) {
-            app.events.emit('pursuit', { phase: cancelled ? 'cancel' : 'done', result: null });
+            app.events.emit('pursuit', { phase: canceled ? 'cancel' : 'done', result: null });
             return false;
           }
           return r;
@@ -238,7 +238,7 @@ export function createTighten(app, ov, axes) {
       return running;
     },
     cancel() {
-      if (running) cancelled = true;
+      if (running) canceled = true;
     },
     get busy() { return !!running; },
     get last() { return last; },

@@ -1,6 +1,6 @@
 // Starburst compass (DESIGN.md §13.3): the projection drawn as an atomic-age starburst clock.
 // One spoke per dimension with w_d > 0.03, from the hub to (px_d, −py_d)·R, ending in a
-// group-coloured knob with the `short` label. Dimensions out of view sit as dots on a parking
+// group-colored knob with the `short` label. Dimensions out of view sit as dots on a parking
 // arc. Drag a knob → actions.rotateDim (live manual tour); double-click a knob → rotate it out;
 // click or drag a parked dot → bring it in. Crowns: ▶/❚❚ tour, speed dial, ⊸ tighten.
 // Fades to 40% when idle and wakes when the pointer comes near.
@@ -115,7 +115,7 @@ export function initCompass(app, mount, ui) {
     className: 'knob-sm crown crown-speed',
   });
 
-  const tighten = h('button', { class: 'crown crown-tighten ibtn', type: 'button', 'aria-label': 'Tighten: find the x combination that minimises scatter in y', html: icon('tighten') });
+  const tighten = h('button', { class: 'crown crown-tighten ibtn', type: 'button', 'aria-label': 'Tighten: find the x combination that minimizes scatter in y', html: icon('tighten') });
   setTip(tighten, { title: 'Tighten', sub: 'Keep y; search x for the tightest relation (projection pursuit)' }, 'top');
   tighten.addEventListener('click', async () => {
     const p = app.pursuit;
@@ -146,7 +146,7 @@ export function initCompass(app, mount, ui) {
     const p = new DOMPoint(clientX, clientY).matrixTransform(m.inverse());
     return [p.x, p.y];
   }
-  // The compass box only moves on resize, so its centre is cached (the window-level pointer
+  // The compass box only moves on resize, so its center is cached (the window-level pointer
   // tracking below must not force a layout while a tour updates the spokes every frame).
   let centerCache = null;
   function center() {

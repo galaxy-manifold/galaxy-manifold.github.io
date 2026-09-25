@@ -4,7 +4,8 @@
 // ctx:  {n, D, raw: Uint16Array[D], ua: Float64Array(D), ub: Float64Array(D), cats: Uint8Array[4]|null}
 //       u = v * ua[d] + ub[d] for raw value v ≥ 1; v = 0 is missing.
 // req:  {F: Float64Array(2D), fade: Float32Array(D), zDim, zlo, zhi (u; zDim < 0 = off),
-//        masks: Uint32Array(4) (visible-code bitmask per category slot)}
+//        masks: Uint32Array(4) (visible-code bitmask per category slot),
+//        needDim (a dim that must be present; < 0 = off)}
 // out:  {X: Float32Array(n), Y: Float32Array(n), vis: Uint8Array(n), visf: Float32Array(n)}
 //       vis = round(255 · visibility) including filters; 0 = hidden (visibility < 0.01).
 
@@ -43,6 +44,11 @@ export function projectRange(ctx, req, out, i0, i1) {
       const u = v * a + b;
       if (u < lo || u > hi) visf[i] = 0;
     }
+  }
+  const nd = req.needDim;
+  if (nd >= 0 && raw[nd]) {
+    const col = raw[nd];
+    for (let i = i0; i < i1; i++) if (col[i] === 0) visf[i] = 0;
   }
   const masks = req.masks;
   if (masks && ctx.cats) {

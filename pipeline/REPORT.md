@@ -60,7 +60,7 @@ Imaging sample. The sample has 242,741 galaxies from the imaging sample, which i
 
 Galaxy Zoo 1. 23,828 galaxies have no Galaxy Zoo 1 entry. 20% of them are special plate spectra, which are 0.8% of the whole sample.
 
-Lim+17. The Lim+17 SDSS catalogue covers only the contiguous northern Galactic cap. Every galaxy at z ≤ 0.2 without a Lim+17 match lies in the southern stripes, at RA 300 to 60 degrees. Away from those stripes the match rate at z ≤ 0.2 is 99.59%. In the imaging sample the exact objID match rate is 94.2%. The positional match (within 2 arcsec, with redshifts within 0.01) added only 1 galaxy, so DR13 and DR17 use the same objIDs. In the Lim+17 galaxy file, 12 survey IDs appear twice. For those we kept the entry closest in redshift.
+Lim+17. The Lim+17 SDSS catalog covers only the contiguous northern Galactic cap. Every galaxy at z ≤ 0.2 without a Lim+17 match lies in the southern stripes, at RA 300 to 60 degrees. Away from those stripes the match rate at z ≤ 0.2 is 99.59%. In the imaging sample the exact objID match rate is 94.2%. The positional match (within 2 arcsec, with redshifts within 0.01) added only 1 galaxy, so DR13 and DR17 use the same objIDs. In the Lim+17 galaxy file, 12 survey IDs appear twice. For those we kept the entry closest in redshift.
 
 ALFALFA. `log_fgas` comes from `mgs_parent`. It is log M_HI minus log M★ for ALFALFA α.100 detections with H I code 1 or 2 and no brighter galaxy at the same velocity inside the beam. 16,189 galaxies have an H I mass, and 15,878 of them pass these checks.
 
@@ -75,7 +75,7 @@ ALFALFA. `log_fgas` comes from `mgs_parent`. It is log M_HI minus log M★ for A
 | `logsSFR` | -14 to -8 | 641,917 | 15,140 | 46 |  | mpajhu |
 | `D4000` | 0.8 to 2.6 | 656,256 | 801 | 229 | 572 with D4000_N_ERR ≤ 0 (all of them also outside the range) | mpajhu |
 | `HdA` | -6 to 12 | 655,173 | 1,884 | 657 | 1,227 with LICK_HD_A_ERR = -1 (value stored as exactly 0) | mpajhu |
-| `gr` | -0.2 to 1.4 | 562,275 | 94,782 | 1 | 2,258 Lim+17 placeholder colours; no Lim+17 match for the rest | lim17 |
+| `gr` | -0.2 to 1.4 | 562,275 | 94,782 | 1 | 2,258 Lim+17 placeholder colors; no Lim+17 match for the rest | lim17 |
 | `OH` | 7.6 to 9.5 | 147,799 | 509,258 | 0 | MPA-JHU gives it for star-forming galaxies only | mpajhu |
 | `OH_PP04` | 7.8 to 9.2 | 147,422 | 509,635 | 0 | MPA class 1 with S/N > 3 in all four lines; 447 outside -1 < O3N2 < 1.9 | pp04 |
 | `logR50` | -1 to 2 | 657,020 | 37 | 37 |  | sdss |
@@ -83,7 +83,7 @@ ALFALFA. `log_fgas` comes from `mgs_parent`. It is log M_HI minus log M★ for A
 | `logSigma` | 5.5 to 11 | 656,845 | 212 | 212 |  | mpajhu |
 | `ba` | 0 to 1 | 657,057 | 0 | 0 |  | sdss |
 | `pEl` | 0 to 1 | 633,229 | 23,828 | 0 | no Galaxy Zoo 1 match | gz1 |
-| `logSigV` | 1.3 to 2.8 | 570,743 | 86,314 | 0 | fibre σ outside 40 to 500 km/s, or error above 0.3σ (16,446 have σ = 0) | mpajhu |
+| `logSigV` | 1.3 to 2.8 | 570,743 | 86,314 | 0 | fiber σ outside 40 to 500 km/s, or error above 0.3σ (16,446 have σ = 0) | mpajhu |
 | `mu50` | 16 to 26 | 657,039 | 18 | 18 |  | sdss |
 | `logfHI` | -3 to 2.5 | 15,860 | 641,197 | 18 | ALFALFA detections only | alfalfa |
 | `logMh` | 10 to 15.5 | 564,534 | 92,523 | 0 | no Lim+17 match | lim17 |
@@ -199,7 +199,7 @@ Quicklook. `pipeline/cache/quicklook.png` shows 12 density plots of the main rel
 
 - Line errors. `mgs_parent` stores the raw MPA-JHU flux errors. We multiply them by the factors on the MPA-JHU DR7 data page before every S/N test. The factors are 1.882 for Hβ, 1.566 for [OIII]5007, 2.473 for Hα and 2.039 for [NII]6584. We checked them at https://wwwmpa.mpa-garching.mpg.de/SDSS/DR7/raw_data.html.
 - HδA failures. 1,227 galaxies have LICK_HD_A exactly 0 with an error of -1, which marks a failed measurement. We read LICK_HD_A_ERR and D4000_N_ERR from `data/galSpecIndx-dr8.fits` and require a positive error.
-- Lim+17 placeholder colours. Lim+17 gives galaxies far from the colour and luminosity relation a fixed colour. The values 0.832 and 0.889 appear 2,783 and 2,565 times in Lim+17, while the neighbouring values appear about 800 and 1,270 times. At those two values we set the colour to missing when the galaxy's own DR17 model g-r differs by more than 0.2 mag. This removed 2,258 colours, close to the excess of about 2,230 in our sample.
+- Lim+17 placeholder colors. Lim+17 gives galaxies far from the color and luminosity relation a fixed color. The values 0.832 and 0.889 appear 2,783 and 2,565 times in Lim+17, while the neighboring values appear about 800 and 1,270 times. At those two values we set the color to missing when the galaxy's own DR17 model g-r differs by more than 0.2 mag. This removed 2,258 colors, close to the excess of about 2,230 in our sample.
 - Repeat spectra. 2,137 galaxies had two spectra in the parent sample. See "Sample selection".
 - Special plates. 38,872 parent spectra are on special plates. See "Sample selection".
 - Duplicate column. The dimension `z` is the redshift column itself. The values are all inside its range.

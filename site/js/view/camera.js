@@ -52,7 +52,7 @@ export function fitParams(bounds, width, height, { pad = 0.06, safe = { left: 0,
   let [x0, x1, y0, y1] = bounds;
   if (!(x1 > x0)) { x0 -= 1; x1 += 1; }
   if (!(y1 > y0)) { y0 -= 1; y1 += 1; }
-  // usable area inside the safe margins; on tiny viewports ignore the margins (centre instead)
+  // usable area inside the safe margins; on tiny viewports ignore the margins (center instead)
   const availW = width - safe.left - safe.right, availH = height - safe.top - safe.bottom;
   const aw = Math.max(width * 0.45, availW), ah = Math.max(height * 0.45, availH);
   const ox = availW >= width * 0.45 ? safe.left : (width - aw) / 2;

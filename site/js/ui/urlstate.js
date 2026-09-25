@@ -1,7 +1,8 @@
 // URL hash state (DESIGN.md §13.9). The hash encodes the view so a link restores it:
 //   p   preset id (when the frame is that preset's view)   · f  frame (base64url int16)
 //   pp  the last preset, when the frame has drifted from it (keeps its cartridge and Reset)
-//   c   colour key ('-' = none)   · m  mode   · z  lo,hi   · k  category masks (bpt:7f,…)
+//   c   color key ('-' = none)   · cv 1 = only galaxies with a color value   · m  mode
+//   z   lo,hi   · k  category masks (bpt:7f,…)
 //   o   overlays that are on (t l a; omitted = all)   · v  camera bounds x0,x1,y0,y1 (u)
 //   g   inspected row   · r  gain,pointSize   · mc  mosaic cell,scale
 //   ts  tour set   · sp  tour speed
@@ -66,6 +67,7 @@ export function initUrlState(app, ui) {
       if (pid) P.set('pp', pid);
     }
     P.set('c', s.color == null ? '-' : s.color);
+    if (s.filters.needColor) P.set('cv', '1');
     if (s.mode === 'mosaic') P.set('m', 'mosaic');
     if (s.filters.z) P.set('z', `${num(s.filters.z[0], 4)},${num(s.filters.z[1], 4)}`);
     const k = [];
@@ -152,6 +154,7 @@ export function initUrlState(app, ui) {
       const pm = store.get().filters.cats;
       f.cats = { ...cats, ...pm };
     }
+    f.needColor = P.get('cv') === '1';
     actions.setFilter(f);
 
     const on = P.get('o');

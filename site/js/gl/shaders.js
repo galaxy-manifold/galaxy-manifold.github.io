@@ -1,9 +1,9 @@
 // GLSL ES 3.00 sources (DESIGN.md §11).
 //
 // Accumulate pass: one soft point sprite per galaxy, additive blending into a float target.
-//   continuous colour: (R, G, B, A) += w·(1, c·has, has, sel)
+//   continuous color: (R, G, B, A) += w·(1, c·has, has, sel)
 //   categorical:       att0 += w·onehot(code 0..3), att1 += w·onehot(code 4..7), att2.r += w·sel
-// with w = visibility × kernel. Decoding, projection, missing-dim fade, filters and colour
+// with w = visibility × kernel. Decoding, projection, missing-dim fade, filters and color
 // lookup all happen in the vertex shader, so a frame costs only uniform updates on the CPU.
 
 export const ACCUM_VS = `#version 300 es
@@ -19,17 +19,18 @@ layout(location = 5) in vec4 a_d5;
 layout(location = 6) in uvec4 a_cats;
 layout(location = 7) in float a_sel;
 
-uniform vec4 u_A[6];        // decode: u = A*val + B (val = normalised uint16)
+uniform vec4 u_A[6];        // decode: u = A*val + B (val = normalized uint16)
 uniform vec4 u_B[6];
 uniform vec4 u_px[6];       // frame columns
 uniform vec4 u_py[6];
 uniform vec4 u_fade[6];     // per-dim missing fade factors
-uniform vec4 u_colW[6];     // one-hot of the colour dimension
+uniform vec4 u_colW[6];     // one-hot of the color dimension
 uniform vec4 u_zW[6];       // one-hot of the range-filter dimension (z)
+uniform vec4 u_needW[6];    // one-hot of a dimension that must be present (needColor)
 uniform vec2 u_colRange;    // (lo, 1/(hi-lo)) in u-space (hi < lo reverses)
 uniform vec3 u_zRange;      // (lo, hi, active) in u-space
 uniform uvec4 u_catMask;    // visible-code bitmask per category slot
-uniform int u_catSlot;      // category slot used for categorical colour
+uniform int u_catSlot;      // category slot used for categorical color
 uniform int u_colorMode;    // 0 none, 1 continuous, 2 categorical
 uniform vec4 u_cam;         // (cx, cy, 2*scale/width, 2*scale/height)
 uniform float u_pointSize;  // device px
@@ -45,7 +46,7 @@ const float MISS = 0.5 / 65535.0;
 void main() {
   vec4 val[6] = vec4[6](a_d0, a_d1, a_d2, a_d3, a_d4, a_d5);
   float X = 0.0, Y = 0.0, vis = 1.0;
-  float cU = 0.0, cM = 0.0, zU = 0.0, zM = 0.0;
+  float cU = 0.0, cM = 0.0, zU = 0.0, zM = 0.0, nM = 0.0;
   for (int k = 0; k < 6; k++) {
     vec4 v = val[k];
     vec4 m = vec4(lessThan(v, vec4(MISS)));
@@ -58,10 +59,12 @@ void main() {
     cM += dot(m, u_colW[k]);
     zU += dot(u, u_zW[k]);
     zM += dot(m, u_zW[k]);
+    nM += dot(m, u_needW[k]);
   }
   uvec4 bits = (u_catMask >> min(a_cats, uvec4(31u))) & uvec4(1u);
   if (bits.x == 0u || bits.y == 0u || bits.z == 0u || bits.w == 0u) vis = 0.0;
   if (u_zRange.z > 0.5 && (zM > 0.5 || zU < u_zRange.x || zU > u_zRange.y)) vis = 0.0;
+  if (nM > 0.5) vis = 0.0;
 
   v_c = clamp((cU - u_colRange.x) * u_colRange.y, 0.0, 1.0);
   v_has = (u_colorMode == 1 && cM < 0.5) ? 1.0 : 0.0;

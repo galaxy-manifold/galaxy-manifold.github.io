@@ -1,8 +1,8 @@
 // Trends (§15): running median of Y in bins of X with its 16–84 % band, over a visible
 // subsample (≤ 60k rows after each settle, ≤ 15k rows at ≤ 10 Hz while the view moves), bins
-// with ≥ 30 points. With a continuous colour variable the sample is split into 4 quantile
+// with ≥ 30 points. With a continuous color variable the sample is split into 4 quantile
 // groups of that variable, drawn as median lines in the colormap (the overall band stays as a
-// faint dotted envelope); with a categorical colour, one median line per class with ≥ 200
+// faint dotted envelope); with a categorical color, one median line per class with ≥ 200
 // points. With a selection, the selected galaxies get their own median line (warm, dashed).
 // Segments resting on few galaxies are drawn fainter (≥ 30 points is the floor, full
 // strength from ~150), so the ends of a line read as less certain. Lines live in projected
@@ -59,7 +59,7 @@ export function firmness(count, { scale = 1, lo = TREND.firmLo, hi = TREND.firmH
 
 /**
  * Runs of a binned polyline with one strength level each: [{from, to, level}] over the valid
- * bins (to inclusive; a segment k→k+1 has strength min(fa_k, fa_{k+1}), quantised to `levels`).
+ * bins (to inclusive; a segment k→k+1 has strength min(fa_k, fa_{k+1}), quantized to `levels`).
  */
 export function strengthRuns(vals, fa, levels = 4) {
   const n = vals.length;
@@ -87,8 +87,8 @@ function qs(sorted, q) {
 }
 
 /**
- * Pure: trend curves for n sample points. xs, ys (projected), cv (colour values, NaN = none)
- * or cc (class codes), colour descriptor cs = {mode, ci}; sel (optional 0/1 flags) adds the
+ * Pure: trend curves for n sample points. xs, ys (projected), cv (color values, NaN = none)
+ * or cc (class codes), color descriptor cs = {mode, ci}; sel (optional 0/1 flags) adds the
  * selection's median. Returns {mode, bins, x0, x1, centers, lo, mid, hi, cnt, fa,
  * groups: [{id, color, mid, cnt, fa, n}], sel: null | {mid, cnt, fa, n}, n}.
  */

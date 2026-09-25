@@ -2,8 +2,8 @@
 // ProjectionCache (view/projection.js) after each settle, plus the picking grid.
 //
 // in:  {type:'init', n, D, ua, ub} then {type:'column', d, col} × D and {type:'cats', s, col} × 4
-//      {type:'project', id, F, fade, zDim, zlo, zhi, masks, G}
-//      {type:'exposure', id, F, fade, zDim, zlo, zhi, masks, cam, sizeDev, dpr}
+//      {type:'project', id, F, fade, zDim, zlo, zhi, masks, needDim, G}
+//      {type:'exposure', id, F, fade, zDim, zlo, zhi, masks, needDim, cam, sizeDev, dpr}
 // out: {type:'ready'} · {type:'projected', id, X, Y, vis, grid, ms} (buffers transferred)
 //      {type:'exposure', id, ref, ms}
 //      {type:'error', id, message}

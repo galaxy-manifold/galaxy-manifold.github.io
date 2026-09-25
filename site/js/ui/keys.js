@@ -1,6 +1,7 @@
 // Keyboard shortcuts (DESIGN.md §13.10):
-//   1–9, 0 presets · space tour · L lasso · M mode · T trends · B literature · C cycle colour
-//   (⇧C backwards) · F fit · R reset · Esc clear selection / close · ? about
+//   1–9, 0 presets · space tour · L lasso · M mode · T trends · B literature · C cycle color
+//   (⇧C backwards) · V only galaxies with a color value · F fit · R reset
+//   · Esc clear selection / close · ? about
 
 import { COLOR_CYCLE } from './uiconfig.js';
 
@@ -19,7 +20,7 @@ export function initKeys(app, ui) {
 
   function cycleColor(dir) {
     const list = COLOR_CYCLE.filter((k) => k == null || (k.startsWith('cat:') ? !!data.catSpec(k.slice(4)) : data.dimIndex(k) >= 0));
-    // skip dimensions that are (mostly) on the axes: colouring by them adds nothing
+    // skip dimensions that are (mostly) on the axes: coloring by them adds nothing
     const w = app.dimWeights();
     const usable = list.filter((k) => k == null || k.startsWith('cat:') || (w[data.dimIndex(k)] || 0) < 0.5);
     const seq = usable.length ? usable : list;
@@ -103,6 +104,10 @@ export function initKeys(app, ui) {
       case 'c':
         e.preventDefault();
         cycleColor(e.shiftKey ? -1 : 1);
+        break;
+      case 'v':
+        e.preventDefault();
+        actions.setFilter({ needColor: !store.get().filters.needColor });
         break;
       case 'f':
         e.preventDefault();

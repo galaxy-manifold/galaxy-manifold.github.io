@@ -1,5 +1,5 @@
-// Colour-by popover (DESIGN.md §13.4): a grid of every dimension (with its colormap) and every
-// category (with its class colours), plus "none". Arrow keys move, Enter picks, Esc closes.
+// Color-by popover (DESIGN.md §13.4): a grid of every dimension (with its colormap) and every
+// category (with its class colors), plus "none". Arrow keys move, Enter picks, Esc closes.
 
 import { h, floatLayer, isNarrow } from './dom.js';
 import { icon } from './icons.js';
@@ -27,7 +27,7 @@ export function openColorPopover(app, anchor) {
   const cur = store.get().color;
   const cells = [];
 
-  const grid = h('div', { class: 'cpop-grid', role: 'listbox', 'aria-label': 'Colour by' });
+  const grid = h('div', { class: 'cpop-grid', role: 'listbox', 'aria-label': 'Color by' });
   for (const g of groupedDims(data.dims)) {
     for (const d of g.dims) {
       const cfg = config.dims.get(d.key);
@@ -46,7 +46,7 @@ export function openColorPopover(app, anchor) {
       grid.append(cell);
     }
   }
-  const cats = h('div', { class: 'cpop-grid cpop-cats', role: 'listbox', 'aria-label': 'Colour by category' });
+  const cats = h('div', { class: 'cpop-grid cpop-cats', role: 'listbox', 'aria-label': 'Color by category' });
   for (const spec of data.categories) {
     const key = `cat:${spec.key}`;
     const cols = spec.codes.map((c) => CATEGORY_COLORS[spec.key]?.[c.code] || c.color || NEUTRAL);
@@ -69,15 +69,15 @@ export function openColorPopover(app, anchor) {
     type: 'button',
     role: 'option',
     'aria-selected': cur == null ? 'true' : 'false',
-    'aria-label': 'No colour',
+    'aria-label': 'No color',
     html: `${icon('clear')}`,
   });
-  setTip(none, { title: 'No colour', sub: 'Density only' }, 'top');
+  setTip(none, { title: 'No color', sub: 'Density only' }, 'top');
   none.addEventListener('click', () => pick(null));
   cells.push(none);
   cats.append(none);
 
-  const root = h('div', { class: 'cpop', role: 'dialog', 'aria-label': 'Colour by' },
+  const root = h('div', { class: 'cpop', role: 'dialog', 'aria-label': 'Color by' },
     grid, h('div', { class: 'cpop-rule', 'aria-hidden': 'true' }), cats);
   floatLayer().append(root);
 

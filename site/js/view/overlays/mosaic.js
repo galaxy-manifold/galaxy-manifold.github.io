@@ -8,7 +8,7 @@
 // (crop″ × kpc/″(z) relative to a 50 kpc cell, clipped). While the view moves the mosaic
 // re-tiles at ≤ 4 Hz drawing already-loaded images only: a cell whose typical galaxy is still
 // loading shows its most typical loaded candidate (or an empty frame) while the image is
-// queued, centre first, so a tour fills in as it turns (pans and zooms re-tile only once the
+// queued, center first, so a tour fills in as it turns (pans and zooms re-tile only once the
 // grid has drifted: zoom beyond ±35 % or the view leaving the tiled area); after a settle it
 // re-tiles fully and loads what is missing. Clicking a tile inspects its
 // galaxy. Without thumbnails (manifest.thumbs null) the dense cells show as empty, translucent
@@ -139,7 +139,7 @@ export function createMosaic(app, ov) {
     const shownNow = new Set();
     for (const t of tiles.values()) if (t.k >= 0 && t.t0 != null && t.t0 <= now && thumbs.isLoaded(t.k)) shownNow.add(t.k);
     const sameGrid = grid && Math.abs(grid.cw - cw) < 1e-9 * Math.abs(cw) && Math.abs(grid.ch - ch) < 1e-9 * Math.abs(ch);
-    const centre = (ix, iy) => [((ix + 0.5) * cw - cam.cx) * cam.scaleX, ((iy + 0.5) * ch - cam.cy) * cam.scaleY];
+    const center = (ix, iy) => [((ix + 0.5) * cw - cam.cx) * cam.scaleX, ((iy + 0.5) * ch - cam.cy) * cam.scaleY];
     if (K) {
       const cellK = new Int32Array(K).fill(-1);
       if (!live) {
@@ -181,7 +181,7 @@ export function createMosaic(app, ov) {
         else {
           // t0: start of the fade-in (null until the image is loaded); an image already on
           // screen keeps showing, the others fade in with a slight radial stagger
-          const [dx, dy] = centre(ix, iy);
+          const [dx, dy] = center(ix, iy);
           let t0 = null;
           if (thumbs.isLoaded(k)) t0 = shownNow.has(k) ? now - fade : now + (motion || reduced ? 0 : staggerDelay(dx, dy, cell, 16));
           t = { key, k, row: data.thumbRows[k], ix, iy, t0, fade };
@@ -202,9 +202,9 @@ export function createMosaic(app, ov) {
     grid = { cw, ch, cell, ix0, iy0, nx, ny, bounds: [vx0, vx1, vy0, vy1] };
     if (pointer) hoverKey = hoverKeyAt(pointer.sx, pointer.sy);
     if (K && want.length) {
-      // load what is missing, centre first (≤ 16 in flight; a newer re-tile replaces the queue)
+      // load what is missing, center first (≤ 16 in flight; a newer re-tile replaces the queue)
       thumbs.cancelQueued();
-      want.sort((a, b) => Math.hypot(...centre(a.ix, a.iy)) - Math.hypot(...centre(b.ix, b.iy)));
+      want.sort((a, b) => Math.hypot(...center(a.ix, a.iy)) - Math.hypot(...center(b.ix, b.iy)));
       thumbs.prefetch(want.slice(0, motion ? 96 : want.length).map((t) => t.k));
     }
     invalidate();

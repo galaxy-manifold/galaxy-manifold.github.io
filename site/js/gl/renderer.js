@@ -6,13 +6,14 @@
 //   r.render(params);                 // params: see RenderParams below
 //   r.renderPreview(frame, params, { width, height }) → HTMLCanvasElement
 //
-// RenderParams (all u-space quantities are standardised coordinates):
+// RenderParams (all u-space quantities are standardized coordinates):
 //   frame      Float64Array(2D)
 //   camera     {cx, cy, scale, aspect, width, height}  (CSS px; scale = CSS px per u along x,
 //              aspect = y/x scale ratio)
 //   color      {mode: 'none'|'continuous'|'categorical', dim, lo, hi, cmap, slot, colors}
 //              lo/hi in u (hi < lo reverses); colors: 8 [r,g,b] (0..1) for codes 0..7
-//   filters    {z: null | {dim, lo, hi} (u), masks: [m0, m1, m2, m3]} (visible-code bitmasks)
+//   filters    {z: null | {dim, lo, hi} (u), masks: [m0, m1, m2, m3] (visible-code bitmasks),
+//              need: dim index that must be present (−1 = none)}
 //   pointSize  CSS px (sprite diameter), gain, ref (auto exposure), dim (global, 0..1)
 //   selection  bool (a selection is active)
 //   bloom      strength 0..1 (0 disables the pass)
@@ -45,7 +46,7 @@ export function spriteSizeDev(pointSize, dpr, maxPointSize = 64) {
 
 export { spriteIntegral } from '../workers/kernel.js';
 
-/** Typical peak pixel value of one sprite (pixel centres are ≤ ~0.5 px from the point). */
+/** Typical peak pixel value of one sprite (pixel centers are ≤ ~0.5 px from the point). */
 export function spritePeak(sizeDev) {
   const R = Math.max(0.5, sizeDev / 2);
   const r = Math.min(1, 0.5 / R);
@@ -107,6 +108,7 @@ export class Renderer {
     this._fade = new Float32Array(MAXD);
     this._colW = new Float32Array(MAXD);
     this._zW = new Float32Array(MAXD);
+    this._needW = new Float32Array(MAXD);
     this._A = new Float32Array(MAXD);
     this._B = new Float32Array(MAXD);
     this._cat = new Float32Array(24);
@@ -408,8 +410,8 @@ export class Renderer {
     const D = this.D;
     const F = p.frame;
     const FD = F.length >> 1;
-    const px = this._px, py = this._py, fade = this._fade, colW = this._colW, zW = this._zW;
-    px.fill(0); py.fill(0); fade.fill(1); colW.fill(0); zW.fill(0);
+    const px = this._px, py = this._py, fade = this._fade, colW = this._colW, zW = this._zW, needW = this._needW;
+    px.fill(0); py.fill(0); fade.fill(1); colW.fill(0); zW.fill(0); needW.fill(0);
     for (let d = 0; d < Math.min(D, FD); d++) {
       px[d] = F[d];
       py[d] = F[FD + d];
@@ -420,6 +422,8 @@ export class Renderer {
     if (cmode === 1) colW[color.dim] = 1;
     const z = p.filters && p.filters.z;
     if (z && z.dim >= 0) zW[z.dim] = 1;
+    const need = p.filters ? p.filters.need : -1;
+    if (need >= 0 && need < D) needW[need] = 1;
     const masks = this._masks;
     masks.fill(0xffffffff);
     if (p.filters && p.filters.masks) for (let s = 0; s < 4; s++) if (p.filters.masks[s] != null) masks[s] = p.filters.masks[s] >>> 0;
@@ -438,6 +442,7 @@ export class Renderer {
     gl.uniform4fv(u.u_fade, fade);
     gl.uniform4fv(u.u_colW, colW);
     gl.uniform4fv(u.u_zW, zW);
+    gl.uniform4fv(u.u_needW, needW);
     const lo = cmode === 1 ? color.lo : 0, hi = cmode === 1 ? color.hi : 1;
     gl.uniform2f(u.u_colRange, lo, Math.abs(hi - lo) > 1e-9 ? 1 / (hi - lo) : 1);
     gl.uniform3f(u.u_zRange, z ? z.lo : 0, z ? z.hi : 0, z && z.dim >= 0 ? 1 : 0);
@@ -568,7 +573,7 @@ export class Renderer {
   /**
    * Render any frame offscreen into a small canvas (preset cartridges).
    * p: RenderParams (camera sized to width×height CSS px); opts: {width=112, height=72, dpr,
-   * background: '#rrggbb' to flatten onto a colour (default transparent), canvas: reuse}.
+   * background: '#rrggbb' to flatten onto a color (default transparent), canvas: reuse}.
    * The canvas is returned at once and filled asynchronously (PBO + fence, no GPU stall);
    * `canvas.ready` is a Promise resolving to the canvas (or null if the context was lost).
    */

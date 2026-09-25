@@ -20,7 +20,7 @@ export const PRESETS = [
     x: { logM: 1 }, y: { logSFR: 1 }, color: 'D4000', filter: null, literature: ['RP15', 'S14', 'S16', 'Q11'] },
   { id: 'ssfr', code: 'sSFR', name: 'Specific SFR vs stellar mass',
     x: { logM: 1 }, y: { logsSFR: 1 }, color: 'cat:env', filter: null, literature: ['RP15s', 'Q11s'] },
-  { id: 'cmr', code: 'CMR', name: 'Colour–mass relation',
+  { id: 'cmr', code: 'CMR', name: 'Color–mass relation',
     x: { logM: 1 }, y: { gr: 1 }, color: 'logsSFR', filter: null, literature: [] },
   { id: 'size', code: 'R–M', name: 'Mass–size relation',
     x: { logM: 1 }, y: { logR50: 1 }, color: 'C', filter: null, literature: ['S03L', 'S03E'] },

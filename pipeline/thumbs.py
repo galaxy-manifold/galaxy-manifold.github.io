@@ -16,7 +16,7 @@ and scale). Each cluster's members are ranked by distance to the centroid. The n
 represents the cluster, except that among the 5 nearest a member with a local cutout is
 preferred when it lies within 1.5x the nearest distance. `gr` (Lim+17) is missing for 14% of
 the sample (the southern stripes and everything at z > 0.2). For the clustering only, those
-galaxies get a colour predicted from their DR17 extinction-corrected model g-r and z (a
+galaxies get a color predicted from their DR17 extinction-corrected model g-r and z (a
 cubic-by-quadratic polynomial fit to the galaxies that have both, robust scatter 0.001 mag).
 No exported value changes.
 
@@ -28,12 +28,12 @@ Rejections. A representative whose cutout cannot be fetched, or whose cutout fai
 quality checks in QA_RULES (blank or no-data fill, a tinted or washed-out sky, stellar glare,
 paler scattered-light haze or one side of the crop tinted by a star just outside it, a
 satellite or asteroid trail across the crop, a bright star
-or much brighter neighbour, nothing at the centre, or a brightness peak that is not at the
-centre), is replaced by the next-best member of its cluster under the same rule.
+or much brighter neighbor, nothing at the center, or a brightness peak that is not at the
+center), is replaced by the next-best member of its cluster under the same rule.
 Every rejection is kept in pipeline/cache/thumbs_rejects.json, so each step can be re-run and
 picks up where it stopped. Rate-limit answers (HTTP 429) never count against a galaxy.
 
-Thumbnails. A centred square of side clip(3 petroR90_r, 12", 42") (capped at the 160 px
+Thumbnails. A centered square of side clip(3 petroR90_r, 12", 42") (capped at the 160 px
 source, 41.92"), Lanczos-resized to 64x64 and saved as JPEG q=88 without metadata, at
 site/data/thumbs/<k // 1000>/<k>.jpg. Thumbnails are numbered in ascending row order, so,
 like the rows themselves, any prefix of them is a random subsample.
@@ -144,7 +144,7 @@ def write_json(path: Path, obj) -> None:
 
 
 # ---------------------------------------------------------------------------------------
-# catalogue
+# catalog
 # ---------------------------------------------------------------------------------------
 def order_hash(objid: pd.Series) -> str:
     """Same hash export_web.py stores in export_stats.json."""
@@ -184,7 +184,7 @@ def source_path(df: pd.DataFrame, row: int) -> tuple[Path, str]:
 
 
 # ---------------------------------------------------------------------------------------
-# colour imputation (clustering features only)
+# color imputation (clustering features only)
 # ---------------------------------------------------------------------------------------
 def _gr_design(c: np.ndarray, z: np.ndarray) -> np.ndarray:
     c = np.clip(c, -0.5, 2.5)
@@ -195,7 +195,7 @@ def _gr_design(c: np.ndarray, z: np.ndarray) -> np.ndarray:
 
 def impute_gr(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, dict]:
     """Lim+17 0.1(g-r) where present; elsewhere a prediction from the DR17 extinction-corrected
-    model colour and z. Returns (gr_filled, imputed_mask, fit_info)."""
+    model color and z. Returns (gr_filled, imputed_mask, fit_info)."""
     gro = ((df["modelMag_g"] - df["extinction_g"])
            - (df["modelMag_r"] - df["extinction_r"])).to_numpy(np.float64)
     z = df["z"].to_numpy(np.float64)
@@ -403,7 +403,7 @@ def valid_file(path: Path) -> bool:
 
 class RateGate:
     """Pacing shared by all fetch workers: request starts are spaced 1/rate apart, a 429 or
-    503 pauses everyone (Retry-After honoured, the pause doubling while they continue), and
+    503 pauses everyone (Retry-After honored, the pause doubling while they continue), and
     the rate adapts (additive increase on success, multiplicative decrease on throttling)."""
 
     def __init__(self, rate: float = RATE):
@@ -639,12 +639,12 @@ _HOUGH_THETA = np.deg2rad(np.arange(0.0, 180.0, 1.5))
 
 
 def edge_metrics(arr: np.ndarray, half: float) -> dict:
-    """One-sided coloured light: scattered light from a bright star just outside the crop
+    """One-sided colored light: scattered light from a bright star just outside the crop
     tints one side of the thumbnail. Take the 30th percentile per channel (robust to small
     sources) in the four edge strips of the crop (12% of its side), and compare the brightest
     strip with the darkest: `edge_ex` is the mean excess, `edge_chroma` its spread over the
-    channels, `edge_rel` their ratio. A neighbour galaxy adds light of ordinary colour
-    (edge_rel ~0.3-0.8); glare is dim but strongly coloured (edge_rel >~ 1)."""
+    channels, `edge_rel` their ratio. A neighbor galaxy adds light of ordinary color
+    (edge_rel ~0.3-0.8); glare is dim but strongly colored (edge_rel >~ 1)."""
     c0 = SRC_SIZE / 2
     lo, hi = max(int(round(c0 - half)), 0), min(int(round(c0 + half)), SRC_SIZE)
     w = max(3, int(round(0.12 * (hi - lo))))
@@ -658,7 +658,7 @@ def edge_metrics(arr: np.ndarray, half: float) -> dict:
 
 
 def trail_metrics(arr: np.ndarray, half: float, r90px: float) -> dict:
-    """A straight line in one or two colour channels: a satellite or asteroid trail, which
+    """A straight line in one or two color channels: a satellite or asteroid trail, which
     SDSS records only in the bands exposed while it passed. A Hough transform (1.5 deg, 2 px
     bins) of the pixels where one channel's small-scale residual (image minus a 9 px median)
     stands > 4 sigma above the mean of the other two finds the strongest line. Its coverage
@@ -739,8 +739,8 @@ def qa_metrics(path: str, r50: float, r90: float) -> dict:
     roff = max(6.0, 1.5 * r50px, 0.25 * side_px)
     off = inbox & (rr > roff)
     off_pk = float(Ls[off].max()) if off.any() else sky
-    # Outside the SDSS footprint the viewer paints a flat grey (22) that JPEG keeps exactly
-    # flat, while real sky always has noise: flag dark pixels whose 5x5 neighbourhood is
+    # Outside the SDSS footprint the viewer paints a flat gray (22) that JPEG keeps exactly
+    # flat, while real sky always has noise: flag dark pixels whose 5x5 neighborhood is
     # flat. (Saturated galaxy cores are flat too, but bright.)
     m1 = uniform_filter(L, 5)
     lstd = np.sqrt(np.maximum(uniform_filter(L * L, 5) - m1 * m1, 0.0))
@@ -758,7 +758,7 @@ def qa_metrics(path: str, r50: float, r90: float) -> dict:
     noise_c = float(1.4826 * np.median(np.abs(cL - np.median(cL))))
     # Stellar glare: the viewer's SDSS rendering gives bright stars large green/red/magenta
     # halos. Count smoothed pixels in the crop, away from the target, that are both bright
-    # and strongly coloured (galaxy light and sky noise are far less saturated in colour).
+    # and strongly colored (galaxy light and sky noise are far less saturated in color).
     sm = np.stack([gaussian_filter(arr[..., i], 2.0) for i in range(3)], axis=2)
     chroma = sm.max(axis=2) - sm.min(axis=2)
     away = inbox & (rr > max(6.0, 2.0 * r50px))
@@ -766,10 +766,10 @@ def qa_metrics(path: str, r50: float, r90: float) -> dict:
     glare = away & (smL > 50) & (chroma > np.maximum(45.0, 0.7 * smL))
     glare_frac = float(glare.sum() / max(away.sum(), 1))
     # Haze: the paler, pink/green/red scattered light of a nearby bright star, which misses
-    # the glare test's strong-colour bar but covers much of the crop around the target.
+    # the glare test's strong-color bar but covers much of the crop around the target.
     haze = away & (smL > 60) & (chroma > np.maximum(30.0, 0.35 * smL))
     haze_frac = float(haze.sum() / max(away.sum(), 1))
-    # Saturated blobs that are not the target: a bright star (or a much brighter neighbour)
+    # Saturated blobs that are not the target: a bright star (or a much brighter neighbor)
     # inside the crop, or just outside it, where its glare still reaches in.
     from scipy.ndimage import label as nd_label
 
@@ -790,8 +790,8 @@ def qa_metrics(path: str, r50: float, r90: float) -> dict:
         other = ~central & (dmin <= margin)
         if other.any():
             star_area = int(area[other].max())
-    # Centring: a mean-shift from the image centre climbs to the nearest brightness peak.
-    # For a well-centred galaxy it stays within a pixel or two; it walks away when the
+    # Centering: a mean-shift from the image center climbs to the nearest brightness peak.
+    # For a well-centered galaxy it stays within a pixel or two; it walks away when the
     # target is a piece of something bigger (a shredded disk) or sits on a brighter source.
     wimg = np.maximum(Ls - sky - 2.0 * noise, 0.0)
     rs = max(4.0, 1.0 * r50px)
@@ -844,24 +844,24 @@ def qa_metrics(path: str, r50: float, r90: float) -> dict:
 # 15,995 thumbnails of version 2 it picked 23, of which ~16 were tinted and the rest had a
 # red star or blue companion at the edge (harmless: a near-identical galaxy replaces them).
 QA_RULES = {
-    "blank_std": 2.0,          # near-uniform image (the no-coverage fill is flat grey 22)
+    "blank_std": 2.0,          # near-uniform image (the no-coverage fill is flat gray 22)
     "dark_mean": 3.0,          # essentially black
     "flat_frac": 0.02,         # >2% of the crop is flat dark fill (edge of the footprint)
     "cast_min": 20.0,          # darkest corner tinted: max-min channel > 20 ...
     "cast_rel": 0.4,           # ... and > 0.4 x its brightness (bad frame, scattered light)
-    "glare_frac": 0.12,        # >12% of the crop around the target strongly coloured
+    "glare_frac": 0.12,        # >12% of the crop around the target strongly colored
     "bright_sky": 40.0,        # darkest corner brighter than this ...
     "bright_sky_contrast": 4.0,  # ... with the target barely above it
-    "contrast_min": 1.0,       # centre not above the sky: nothing there
+    "contrast_min": 1.0,       # center not above the sky: nothing there
     "star_area": 100,          # a saturated blob >= 100 px other than the target ...
     "star_vs_target": 2.0,     # ... and > 2x the target's own saturated area
-    "shift_min_px": 8.0,       # the brightness peak nearest the centre lies more than
-    "shift_r50": 0.75,         # max(8 px, 0.75 R50) away: the target is not what is centred
-    "haze_frac": 0.53,         # >53% of the crop around the target bright and coloured
+    "shift_min_px": 8.0,       # the brightness peak nearest the center lies more than
+    "shift_r50": 0.75,         # max(8 px, 0.75 R50) away: the target is not what is centered
+    "haze_frac": 0.53,         # >53% of the crop around the target bright and colored
     "trail_votes": 40,         # a straight one- or two-band line of >= 40 px that crosses
     "trail_cov_out": 0.5,      # the crop and is traced along >= 50% of >= 30 px of chord
     "trail_n_out": 30,         # outside the galaxy: a satellite or asteroid trail
-    "edge_chroma": 24.0,       # one side of the crop tinted: colour spread of the excess
+    "edge_chroma": 24.0,       # one side of the crop tinted: color spread of the excess
     "edge_rel": 0.95,          # >= 24 levels and >= 0.95 x its mean brightness excess,
     "edge_ex": 15.0,           # which is >= 15 levels (not applied to capped crops, where
 }                              # the galaxy's own disk reaches the edges)
@@ -877,7 +877,7 @@ def qa_reason(m: dict) -> str:
     if m["flat_frac"] > R["flat_frac"]:
         return "no data"
     if m["cast_c"] > R["cast_min"] and m["cast_c"] > R["cast_rel"] * m["sky_c"]:
-        return "colour cast"
+        return "color cast"
     if m["glare_frac"] > R["glare_frac"]:
         return "glare"
     if m["haze_frac"] > R["haze_frac"]:
@@ -891,11 +891,11 @@ def qa_reason(m: dict) -> str:
     if m["sky_c"] > R["bright_sky"] and m["contrast_c"] < R["bright_sky_contrast"]:
         return "bright sky"
     if m["contrast_c"] < R["contrast_min"]:
-        return "nothing at centre"
+        return "nothing at center"
     if m["star_area"] >= R["star_area"] and m["star_area"] > R["star_vs_target"] * m["sat_cen"]:
         return "bright star"
     if m["shift_px"] > max(R["shift_min_px"], R["shift_r50"] * m["r50_px"]):
-        return "off centre"
+        return "off center"
     return ""
 
 
@@ -1089,7 +1089,7 @@ def thumb_file(k: int) -> Path:
 def contact_sheet(df_vals: pd.DataFrame, idx: np.ndarray, xkey: str, ykey: str,
                   xr: tuple, yr: tuple, path: Path, nx: int = 30, ny: int = 20,
                   title: str = "") -> int:
-    """Grid of thumbnails: in each cell, the representative nearest the cell centre."""
+    """Grid of thumbnails: in each cell, the representative nearest the cell center."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt

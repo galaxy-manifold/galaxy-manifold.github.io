@@ -45,13 +45,13 @@ manifest → app = createApp({manifest, base}) → await initUI(app) → await i
 | `isMoving()` | true while animating/touring/camera-animating, within 150 ms of the last change, or while `proj` is stale |
 | `actions` | below |
 | `pursuit.tighten(opts)` | stub returning false; the overlays agent replaces `app.pursuit` |
-| `preview(idOrFrame, {width=112, height=72, dpr, background, canvas, color, filters})` | offscreen render of a preset (its colour and category filter, current z filter) or of a frame. Returns a canvas at once and fills it asynchronously; `canvas.ready` is a Promise. ~3 ms CPU each, so stagger many (one per frame). `null` before `data:ready` |
+| `preview(idOrFrame, {width=112, height=72, dpr, background, canvas, color, filters})` | offscreen render of a preset (its color and category filter, current z filter) or of a frame. Returns a canvas at once and fills it asynchronously; `canvas.ready` is a Promise. ~3 ms CPU each, so stagger many (one per frame). `null` before `data:ready` |
 | `presetFrame(id)` | frame for a preset (or `null`) |
 | `presetAlignment(id)` | orientation-aware match of the current frame to a preset: `min(v̂x·px, v̂y·py)`, 1 = exact, negative if flipped. Use `< 0.99` to fade the active cartridge (§13.5) |
 | `currentCombos()` | `{x, y}` current axes as physical combos (exact, orientation kept) — use to preserve one axis when setting the other |
 | `axisInfo(col)` | `frame.axisInfo(app.frame, col, dims)` (labels/ticks, below) |
-| `colorInfo()` | current colour: `{mode:'none'}` · `{mode:'continuous', key, dim, cmap, reverse, range:[lo,hi] physical, lo, hi (u), spec}` · `{mode:'categorical', key, cat, slot, hex[8], colors[8], spec}` |
-| `colorParams(key)`, `filterParams(filters?)` | the renderer/projection descriptions for any colour key / filters state |
+| `colorInfo()` | current color: `{mode:'none'}` · `{mode:'continuous', key, dim, cmap, reverse, range:[lo,hi] physical, lo, hi (u), spec}` · `{mode:'categorical', key, cat, slot, hex[8], colors[8], spec}` |
+| `colorParams(key)`, `filterParams(filters?, color?)` | the renderer/projection descriptions for any color key / filters state: `{z, masks, need}` (`need` = dim index that must be present, from `needColor`; −1 = none). Cached while filters and (with `needColor`) the color are unchanged, so identity tells you when the effective filter changed |
 | `dimWeights()` | `Float64Array(D)` of `w_d = √(px_d²+py_d²)` for the current frame |
 | `timing`, `stats` | load timings (ms) and `{fps, drawMs, tickMs, tickMax}` |
 | `motion` | `{reduced(), scale()}` (`scale()` = 0.3 under reduced motion) |
@@ -62,18 +62,18 @@ manifest → app = createApp({manifest, base}) → await initUI(app) → await i
 Durations are ms and are multiplied by `app.motion.scale()`. View actions return a Promise
 resolving when the animation ends.
 
-| action | behaviour |
+| action | behavior |
 |---|---|
-| `setFrame(F, {duration=0})` | geodesic animation (or jump) to frame F (re-orthonormalised). Stops the tour, clears `presetId` |
+| `setFrame(F, {duration=0})` | geodesic animation (or jump) to frame F (re-orthonormalized). Stops the tour, clears `presetId` |
 | `setAxes({x, y}, {duration=1100, fit=true})` | physical combos `{key: κ}`; a missing side keeps the current one (via `currentCombos`). x is built first, y Gram–Schmidt'ed against it. If the new axis is parallel to the kept one, the axes **swap** (e.g. dropping the current x dim on Y). Animates frame and camera together; clears `presetId` |
-| `applyPreset(id, {duration=1100})` | sets `presetId`, the preset colour, category filters (categories the preset does not mention reset to all; z filter kept), then `setAxes` with fit |
+| `applyPreset(id, {duration=1100})` | sets `presetId`, the preset color, category filters (categories the preset does not mention reset to all; z filter kept), then `setAxes` with fit |
 | `rotateDim(key, [ax, ay])` | manual-tour step (Cook & Buja), immediate; target clamped to a′²+b′² ≤ 0.995. When the dim is already in the plane, a rim target rotates in-plane and an inner target tilts toward the first tour-set dim not in view. Stops the tour |
 | `setColor('logSFR' \| 'cat:bpt' \| null)` | returns false for unknown keys |
 | `setMode('glow' \| 'mosaic')` | mosaic dims the glow to `render.mosaicDim` (0.35) |
-| `setFilter({z: [lo,hi] \| null})`, `setFilter({cats: {bpt: mask}})` | masks are bitmasks over codes 0..7 (bit c = code c shown; 0xFF = all) |
-| `tour.play() / pause() / toggle() / setSet(keys) / setSpeed(v)` | constant 0.35 rad/s × speed along geodesics between uniform random tour-set planes (no in-plane spin). Speed ramps up/down (~0.2 s). Starting the tour eases the camera to an isotropic fit; each leg re-centres the camera on its target plane unless the user zoomed/panned during this tour. `setSet` needs ≥ 2 known keys |
+| `setFilter({z: [lo,hi] \| null})`, `setFilter({cats: {bpt: mask}})`, `setFilter({needColor: bool})` | masks are bitmasks over codes 0..7 (bit c = code c shown; 0xFF = all). `needColor` hides galaxies without a value of the color variable (a continuous dim missing, or category code 0); it follows the color as it changes |
+| `tour.play() / pause() / toggle() / setSet(keys) / setSpeed(v)` | constant 0.35 rad/s × speed along geodesics between uniform random tour-set planes (no in-plane spin). Speed ramps up/down (~0.2 s). Starting the tour eases the camera to an isotropic fit; each leg re-centers the camera on its target plane unless the user zoomed/panned during this tour. `setSet` needs ≥ 2 known keys |
 | `fit({duration=600})` | robust (0.5–99.5 %) bounds of the visible prefix sample; anisotropic up to 2.2× |
-| `resetView()` | clears the z filter, re-applies the current (or default) preset |
+| `resetView()` | clears the z filter and `needColor`, re-applies the current (or default) preset |
 | `select(mask \| null)` | `Uint8Array(n)` nonzero = selected; empty masks clear. Emits `select` `{count}` |
 | `inspect(index \| null)` | emits `inspect` `{index}` (also when unchanged) |
 | `setTool('pan' \| name)` | any tool registered on `app.interaction` |
@@ -90,7 +90,7 @@ top-level object; `changed` lists changed top-level keys. Initial state:
 ```js
 { presetId: null, color: null, mode: 'glow',
   overlays: { trends: true, literature: true, axes: true },
-  filters: { z: null, cats: { bpt: 0xFF, env: 0xFF, morph: 0xFF } },
+  filters: { z: null, cats: { bpt: 0xFF, env: 0xFF, morph: 0xFF }, needColor: false },
   tour: { playing: false, set: [...TOUR_DEFAULT present], speed: 1 },
   render: { gain: 1, pointSize: 2, bloom: 0.3 },        // + optional dim, mosaicDim
   tool: 'pan', selection: null /* {mask, count} */, inspected: null,
@@ -123,7 +123,7 @@ touring or dragging spokes (fade the cartridge with `presetAlignment`).
 `n`, `D`, `dims[i]` (DimSpec + `index`, `A`, `B`, `ua`, `ub`, `step`), `dimIndex(keyOrIndex)`
 (−1 unknown), `dim(k)`, `raw[i]` / `raw.logM` (Uint16Array, 0 = missing), `value(i, k)`
 (physical or NaN), `ustd(i, k)` (u or NaN), `column(k)` (Float32Array physical, lazy, NaN =
-missing), `categories` (normalised CatSpecs: `{key, label, file, slot, codes:[{code, label,
+missing), `categories` (normalized CatSpecs: `{key, label, file, slot, codes:[{code, label,
 name, color}]}`), `catSpec(key)`, `cats[key]` (Uint8Array, 0 = missing), `catCode(i, key)`,
 `quantile(k, p)` / `percentile(k, x)` (from the 101 manifest quantiles; p in 0–100),
 `meta` `{ra, dec, plate, mjd, fiber, loaded, ready: Promise}`, `metaRow(i)` (mjd offset
@@ -210,8 +210,8 @@ flight, newest first; emits `thumb`), `prefetch(ks)`, `cancelQueued()`, `forRow(
 WebGL2 on `#gl`. `info` → `{float32, float16, maxPointSize, tier: 'RGBA32F'|'RGBA16F'|'RGBA8', lost}`;
 `render(params)` (normally via `requestRender`), `renderPreview(frame, params, opts)` (use
 `app.preview`). Accumulation targets are RGBA32F with `EXT_color_buffer_float` +
-`EXT_float_blend`, else RGBA16F, else RGBA8. Categorical colour uses three MRT attachments
-(codes 0–3, codes 4–7, selected). The composite writes premultiplied colour over the CSS stage
+`EXT_float_blend`, else RGBA16F, else RGBA8. Categorical color uses three MRT attachments
+(codes 0–3, codes 4–7, selected). The composite writes premultiplied color over the CSS stage
 background (graph paper + vignette), with an optional quarter-resolution bloom.
 
 ## Page, layers and CSS hooks
@@ -224,8 +224,8 @@ background (graph paper + vignette), with an optional quarter-resolution bloom.
 - Inspector drawer: add class `open` (or `data-open="true"`) to `#inspector`; below 760 px it
   becomes a bottom sheet. Rail becomes a horizontal strip (`--rail-strip-h`).
 - `#stage.gl-lost` while the WebGL context is lost; `#splash.done` when the splash fades.
-- Tokens in `css/tokens.css` (`--bg`, `--cream`, `--orange`, group colours `--g-<group>`,
-  category colours `--bpt-1…`, fonts `--font-display|ui|mono`, `--ease-view`, layout sizes).
+- Tokens in `css/tokens.css` (`--bg`, `--cream`, `--orange`, group colors `--g-<group>`,
+  category colors `--bpt-1…`, fonts `--font-display|ui|mono`, `--ease-view`, layout sizes).
   JS mirrors in `js/config/style.js` (`COLORS`, `GROUP_COLORS`, `groupColor`,
   `CATEGORY_COLORS`, `COLORMAPS`, `MOTION`, `FONTS`, `hexToRgb`).
 - Colormaps for legends: `js/gl/colormaps.js` → `sampleColormap(name, t, reverse)`,

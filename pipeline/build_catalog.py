@@ -1,5 +1,5 @@
 """Merge the MGS parent sample with SkyServer DR17 photometry, Galaxy Zoo 1 and the Lim+17
-group catalogue, apply the sample cuts, and compute every dimension (DESIGN.md section 6)
+group catalog, apply the sample cuts, and compute every dimension (DESIGN.md section 6)
 and category (section 7).
 
 Output: pipeline/cache/catalog.parquet (parent order, sample rows only) and
@@ -350,7 +350,7 @@ def build() -> tuple[pd.DataFrame, dict]:
         "hda_err_nonpositive": int((~ok_hd).sum()),
         "hda_err_nonpositive_in_range": int((~ok_hd & (hd >= -6) & (hd <= 12)).sum()),
         "hda_exact_zero_with_bad_err": int((~ok_hd & (hd == 0)).sum())}
-    # Lim+17 colour, minus the fixed placeholder colours given to photometric outliers
+    # Lim+17 color, minus the fixed placeholder colors given to photometric outliers
     lc = finite_or_nan(df["lim_color"])
     gr_obs = ((df["modelMag_g"] - df["extinction_g"]) - (df["modelMag_r"] - df["extinction_r"])
               ).to_numpy(float)
@@ -402,7 +402,7 @@ def build() -> tuple[pd.DataFrame, dict]:
     D["ba"] = np.where(np.isfinite(frac), ba, np.nan)
     D["pEl"] = finite_or_nan(df["gz1_p_el_debiased"], lo=-1)
 
-    # velocity dispersion: validity on the fibre measurement, then the J95 correction
+    # velocity dispersion: validity on the fiber measurement, then the J95 correction
     vd = df["v_disp"].to_numpy(float)
     vde = df["v_disp_err"].to_numpy(float)
     ok_v = ((vd > C.SIGV_MIN) & (vd < C.SIGV_MAX) & (vde > 0) & (vde < C.SIGV_MAXFRACERR * vd)

@@ -37,6 +37,8 @@ const P = {
   fit: '<path d="M4.4 9V4.4H9M15 4.4h4.6V9M19.6 15v4.6H15M9 19.6H4.4V15"/>',
   ruler: '<rect x="3" y="8.2" width="18" height="7.6" rx="1.6"/><path d="M6.8 8.2v2.8M10.2 8.2v3.8M13.6 8.2v2.8M17 8.2v3.8"/>',
   clear: '<circle cx="12" cy="12" r="7.6"/><path d="M6.7 17.3 17.3 6.7"/>',
+  // only galaxies with a color value: a funnel
+  funnel: '<path d="M4.6 5.4h14.8l-5.6 6.9v5.1l-3.6 1.8v-6.9z"/>',
   cell: '<rect x="4.2" y="4.2" width="15.6" height="15.6" rx="2.2"/><path d="M4.2 12h15.6M12 4.2v15.6"/>',
   speed: '<path d="M4.6 16.4a7.4 7.4 0 1 1 14.8 0"/><path d="M12 16.4l3.8-4.6"/><circle cx="12" cy="16.4" r="1.2" fill="currentColor" stroke="none"/>',
   chevron: '<path d="M7 10l5 5 5-5"/>',

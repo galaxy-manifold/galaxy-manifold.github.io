@@ -60,7 +60,7 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
     color: null,
     mode: 'glow',
     overlays: { trends: true, literature: true, axes: true },
-    filters: { z: null, cats: { ...catMasksAll } },
+    filters: { z: null, cats: { ...catMasksAll }, needColor: false },
     tour: { playing: false, set: defaultTourSet(data.dims), speed: 1 },
     render: { gain: 1, pointSize: 2, bloom: 0.3 },
     tool: 'pan',
@@ -156,10 +156,18 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
   }
 
   let filterCache = null;
-  /** Renderer/projection filter description for a filters state (default: current). */
-  function filterParams(f) {
-    const cur = store.get().filters;
-    if (!f && filterCache && filterCache.src === cur) return filterCache.p;
+  /**
+   * Renderer/projection filter description for a filters state and color key (default:
+   * current). `needColor` hides galaxies without a value of the color variable: a
+   * continuous color sets `need` (its dim index), a categorical one drops code 0 from its mask.
+   */
+  function filterParams(f, color) {
+    const s = store.get();
+    const cur = s.filters;
+    const ckey = color !== undefined ? color : s.color;
+    const own = !f && color === undefined;
+    const ck = cur.needColor ? ckey : null;   // the color only matters with needColor on
+    if (own && filterCache && filterCache.src === cur && filterCache.color === ck) return filterCache.p;
     const src = f || cur;
     const zi = data.dimIndex('z');
     let z = null;
@@ -171,8 +179,15 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
     for (const c of data.categories) {
       if (c.slot >= 0 && src.cats && src.cats[c.key] != null) masks[c.slot] = (src.cats[c.key] & 0xff) >>> 0;
     }
-    const p = { z, masks };
-    if (!f) filterCache = { src: cur, p };
+    let need = -1;
+    if (src.needColor && ckey) {
+      if (ckey.startsWith('cat:')) {
+        const spec = data.catSpec(ckey.slice(4));
+        if (spec && spec.slot >= 0) masks[spec.slot] = (masks[spec.slot] & ~1) >>> 0;
+      } else need = data.dimIndex(ckey);
+    }
+    const p = { z, masks, need };
+    if (own) filterCache = { src: cur, color: ck, p };
     return p;
   }
 
@@ -335,7 +350,7 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
     tour.leg = fm.geodesic(app.frame, target, { noSpin: true, prefer: idx });
     tour.progress = 0;
     tour.dist = Math.max(tour.leg.dist, 1e-3);
-    // keep the visible data centred: ease an isotropic fit toward the leg's end frame
+    // keep the visible data centered: ease an isotropic fit toward the leg's end frame
     // (skipped once the user has zoomed or panned during this tour)
     if (!tour.userCamera && data.loaded) {
       const legMs = (1000 * tour.dist) / (MOTION.tourRadPerSec * Math.max(0.2, store.get().tour.speed));
@@ -461,8 +476,17 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
   // ------------------------------------------------------------------ store reactions
   store.subscribe((s, changed, source, prev) => {
     for (const k of changed) {
-      if (k === 'color') colorCache = null;
-      else if (k === 'filters') {
+      if (k === 'color') {
+        colorCache = null;
+        // with needColor on, a new color variable is also a new filter
+        if (s.filters.needColor && !changed.includes('filters')) {
+          filterCache = null;
+          proj.filters = filterParams();
+          proj.markStale();
+          exposure.dirty = true;
+          markMotion();
+        }
+      } else if (k === 'filters') {
         filterCache = null;
         proj.filters = filterParams();   // default for overlay calls that omit filters
         proj.markStale();
@@ -581,6 +605,7 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
         for (const [k, m] of Object.entries(patch.cats)) if (data.catSpec(k)) cats[k] = (m >>> 0) & 0xff;
         next.cats = cats;
       }
+      if ('needColor' in patch) next.needColor = !!patch.needColor;
       store.set({ filters: next });
     },
 
@@ -609,7 +634,7 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
     },
 
     resetView() {
-      actions.setFilter({ z: null });
+      actions.setFilter({ z: null, needColor: false });
       return actions.applyPreset(store.get().presetId || defaultPresetId);
     },
 
@@ -672,7 +697,7 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
   app.colorParams = colorParams;
   app.dimWeights = () => fm.dimWeights(app.frame);
 
-  /** Offscreen preview of a preset id (its colour and filters) or of a frame. */
+  /** Offscreen preview of a preset id (its color and filters) or of a frame. */
   app.preview = (idOrFrame, { width = 112, height = 72, dpr, background = null, canvas, color, filters } = {}) => {
     if (!data.loaded || !renderer.ready) return null;
     let F, cp, fp;
@@ -680,15 +705,17 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
       const p = presetById(idOrFrame);
       F = p && presetFrame(p);
       if (!F) return null;
-      cp = colorParams(color !== undefined ? color : p.color);
+      const ckey = color !== undefined ? color : p.color;
+      cp = colorParams(ckey);
       const cats = { ...catMasksAll };
       for (const [k, m] of Object.entries(p.filter?.cats || {})) if (k in cats) cats[k] = m;
-      fp = filterParams({ z: store.get().filters.z, cats });
+      const f = store.get().filters;
+      fp = filterParams({ z: f.z, cats, needColor: f.needColor }, ckey);
     } else {
       F = idOrFrame;
       if (!F || F.length !== 2 * D) return null;
       cp = colorParams(color !== undefined ? color : store.get().color);
-      fp = filters ? filterParams(filters) : filterParams();
+      fp = filters || color !== undefined ? filterParams(filters, color) : filterParams();
     }
     const r = Math.min(2, Math.max(1, dpr || renderer.dpr || 1));
     const cam = { ...fitParams(proj.estimateBounds(F, fp), width, height, { pad: 0.08 }), width, height };
@@ -776,7 +803,7 @@ export function createApp({ manifest, base = 'data', root = document } = {}) {
     app.timing.upload = performance.now() - t1;
     measure();
     if (!viewTouched && defaultPresetId) {
-      // first-load arrival: start from a random frame of the tour set, coloured like the target
+      // first-load arrival: start from a random frame of the tour set, colored like the target
       const start = fm.randomFrame(D, tourIndices(), Math.random);
       app.frame.set(start);
       app.frameVersion++;

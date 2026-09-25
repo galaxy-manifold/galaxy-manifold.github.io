@@ -16,16 +16,17 @@ import { quantileSorted } from '../math/stats.js';
 const PREFIX_MAX = 65536;
 const GRID = 256;
 
-/** Filter description shared with the renderer: {z: null|{dim, lo, hi} (u), masks: [4]}. */
+/** Filter description shared with the renderer: {z: null|{dim, lo, hi} (u), masks: [4], need}. */
 function reqFilters(filters) {
   const z = filters && filters.z;
   const masks = new Uint32Array(4).fill(0xffffffff);
   if (filters && filters.masks) for (let s = 0; s < 4; s++) if (filters.masks[s] != null) masks[s] = filters.masks[s] >>> 0;
-  return { zDim: z && z.dim >= 0 ? z.dim : -1, zlo: z ? z.lo : 0, zhi: z ? z.hi : 0, masks };
+  const needDim = filters && filters.need >= 0 ? filters.need : -1;
+  return { zDim: z && z.dim >= 0 ? z.dim : -1, zlo: z ? z.lo : 0, zhi: z ? z.hi : 0, masks, needDim };
 }
 
 function filtersKey(f) {
-  return f ? `${f.z ? `${f.z.dim}:${f.z.lo}:${f.z.hi}` : '-'}|${f.masks ? Array.from(f.masks).join(',') : '-'}` : '';
+  return f ? `${f.z ? `${f.z.dim}:${f.z.lo}:${f.z.hi}` : '-'}|${f.masks ? Array.from(f.masks).join(',') : '-'}|${f.need >= 0 ? f.need : '-'}` : '';
 }
 
 export class ProjectionCache {
@@ -305,6 +306,7 @@ export class ProjectionCache {
         const u = r * ua[f.zDim] + ub[f.zDim];
         if (r === 0 || u < f.zlo || u > f.zhi) v = 0;
       }
+      if (f.needDim >= 0 && raw[f.needDim][i] === 0) v = 0;
       for (let s = 0; s < 4; s++) {
         const m = f.masks[s];
         if ((m & 0xff) === 0xff || !cats[s]) continue;
@@ -379,6 +381,7 @@ export class ProjectionCache {
         const u = U[o + f.zDim];
         if ((miss[i] >>> f.zDim) & 1 || u < f.zlo || u > f.zhi) v = 0;
       }
+      if (f.needDim >= 0 && (miss[i] >>> f.needDim) & 1) v = 0;
       for (let s = 0; s < 4; s++) {
         const mk = f.masks[s];
         if ((mk & 0xff) === 0xff || !cats[s]) continue;

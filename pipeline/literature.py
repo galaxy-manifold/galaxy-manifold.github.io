@@ -17,7 +17,7 @@ band/aperture/calibration, and each conversion applied to reach OUR data convent
 Verification is automatic and repeatable. Each relation lists verbatim excerpts together
 with the cached source file they come from (pipeline/cache/literature_src/<key>/, filled by
 ``--fetch``). On every build, the excerpts are searched for in the comment-stripped,
-whitespace-normalised LaTeX. ``verification.status`` is "verified" only if every excerpt is
+whitespace-normalized LaTeX. ``verification.status`` is "verified" only if every excerpt is
 found. Tabulated data (T04 Table 3, C18 Table 1) are parsed from the cached tables and
 compared with the copies in this file.
 
@@ -206,7 +206,7 @@ def fetch_r50_sample():
 _norm_cache: dict = {}
 
 
-def _normalise(text: str, strip_comments: bool = True) -> str:
+def _normalize(text: str, strip_comments: bool = True) -> str:
     if strip_comments:
         text = re.sub(r"(?<!\\)%.*", "", text)
     return re.sub(r"\s+", " ", text)
@@ -219,9 +219,9 @@ def _source_text(key: str, fname: str) -> str | None:
         if not p.exists():
             _norm_cache[ck] = None
         elif p.suffix == ".json":   # OpenAlex record: the erratum text
-            _norm_cache[ck] = _normalise(json.loads(p.read_text()).get("_abstract_text", ""), False)
+            _norm_cache[ck] = _normalize(json.loads(p.read_text()).get("_abstract_text", ""), False)
         else:
-            _norm_cache[ck] = _normalise(p.read_text(errors="replace"))
+            _norm_cache[ck] = _normalize(p.read_text(errors="replace"))
     return _norm_cache[ck]
 
 
@@ -230,7 +230,7 @@ def check_excerpts(excerpts):
     rows, ok = [], True
     for key, fname, text in excerpts:
         src = _source_text(key, fname)
-        found = None if src is None else (_normalise(text, False) in src)
+        found = None if src is None else (_normalize(text, False) in src)
         if found is not True:
             ok = False
         rows.append((key, fname, text, found))
@@ -295,7 +295,7 @@ def _nfw_mu(x):
 
 
 def to_m180m(log_m, kind, h, om0, z=Z_REF):
-    """log10 of M_180m (180 x mean matter density, as in Lim+17) for NFW haloes of mass
+    """log10 of M_180m (180 x mean matter density, as in Lim+17) for NFW halos of mass
     10**log_m [Msun] defined as `kind` ('200c' or 'vir', Bryan & Norman), in the source
     cosmology (h, om0). Concentrations from Duffy+08 (their masses are in h^-1 Msun).
     Solves m(x2)/x2^3 = q m(c)/c^3 with q = Delta_2 rho_2 / (Delta_1 rho_1)."""
@@ -334,9 +334,9 @@ def m10_aperture_offset():
     """Median log SFR_tot - log SFR_fib of MPA-JHU for an M10-like selection.
 
     M10 select SDSS DR7 emission-line galaxies with 0.07 < z < 0.30, S/N(Halpha) > 25, no AGN
-    (Kauffmann+03 BPT) and use SFRs *inside the fibre*. Our logSFR is the MPA-JHU total SFR,
+    (Kauffmann+03 BPT) and use SFRs *inside the fiber*. Our logSFR is the MPA-JHU total SFR,
     so the offset maps M10's mu_0.32 onto ours. We select MPA BPT classes 1-2 and
-    0.07 < z < 0.30, and cut S/N(Halpha) > 25 on the catalogue errors AS GIVEN (no rescaling).
+    0.07 < z < 0.30, and cut S/N(Halpha) > 25 on the catalog errors AS GIVEN (no rescaling).
 
     Why raw errors (verifier, 2026-09-24): M10 do not rescale, and only the raw errors reproduce
     their sample. In our MGS parent the raw cut leaves 140,574 galaxies (M10: 141,825), while the
@@ -345,7 +345,7 @@ def m10_aperture_offset():
 
     Also returned: the median of (mu_tot - mu_M10) in bins of our axis mu_tot (``inv_map``). A
     running median in mu_tot compares against this, so it tests the constant shift.
-    Reads the sibling catalogue catalog/mgs_parent.parquet (read-only)."""
+    Reads the sibling catalog catalog/mgs_parent.parquet (read-only)."""
     import pandas as pd
     df = pd.read_parquet(PARENT, columns=["z", "log_mstar", "log_sfr", "log_sfr_fib", "bptclass", "f_ha", "e_ha"])
     try:
@@ -367,7 +367,7 @@ def m10_aperture_offset():
         mm = m & (df.log_mstar >= lo) & (df.log_mstar < lo + 0.5)
         if mm.sum() > 100:
             bins[f"{lo:.1f}-{lo + 0.5:.1f}"] = round(float(dap[mm].median()), 3)
-    # per-galaxy mu_tot (ours: Kroupa, total SFR) and mu_M10 (Chabrier via 1.06, fibre SFR)
+    # per-galaxy mu_tot (ours: Kroupa, total SFR) and mu_M10 (Chabrier via 1.06, fiber SFR)
     mu_tot = (df.log_mstar - 0.32 * df.log_sfr)[m]
     mu_m10 = ((df.log_mstar - math.log10(1.06)) - 0.32 * (df.log_sfr_fib - DEX_C2K_SFR))[m]
     inv = {}
@@ -384,16 +384,16 @@ def m10_aperture_offset():
 
 
 # M10 sec. 2.1 (second review): of the 927,552 DR7 galaxies, the emission-line galaxies at
-# 0.07 < z < 0.30 are 47 per cent (436k); S/N(Halpha) > 25 "selects 43% of the remaining sample";
-# AGN-like galaxies are 22 per cent; log(total mass) - log(fiber mass) = 0.50 +/- 0.15.
+# 0.07 < z < 0.30 are 47 percent (436k); S/N(Halpha) > 25 "selects 43% of the remaining sample";
+# AGN-like galaxies are 22 percent; log(total mass) - log(fiber mass) = 0.50 +/- 0.15.
 M10_STATS = {"n_el": round(0.47 * 927552), "pass_sn25": 0.43, "agn": 0.22, "mtot_mfib": 0.50}
 
 
 def m10_reconstruction(ha_scale):
     """Second review, 2026-09-24: which S/N(Halpha) > 25 cut reproduces M10's own sample
     statistics (M10_STATS)? 'Emission-line galaxies' are taken as S/N(Halpha) > 2 or > 3 on the raw
-    errors. Also rebuilds M10-style fibre SFRs (Kennicutt 1998 from the Balmer-decrement corrected
-    fibre Halpha flux, Cardelli law, case B 2.86) and compares them with the MPA-JHU fibre SFRs
+    errors. Also rebuilds M10-style fiber SFRs (Kennicutt 1998 from the Balmer-decrement corrected
+    fiber Halpha flux, Cardelli law, case B 2.86) and compares them with the MPA-JHU fiber SFRs
     moved to Chabrier with MD14. Reads catalog/mgs_parent.parquet (read-only)."""
     import pandas as pd
     from astropy.cosmology import FlatLambdaCDM
@@ -402,7 +402,7 @@ def m10_reconstruction(ha_scale):
     with np.errstate(divide="ignore", invalid="ignore"):
         sn = (df.f_ha / df.e_ha).to_numpy()
     bpt = df.bptclass.to_numpy()
-    out = {"m10": M10_STATS, "mgs_parent_note": "MGS parent only; M10 used the full DR7 MPA-JHU catalogue"}
+    out = {"m10": M10_STATS, "mgs_parent_note": "MGS parent only; M10 used the full DR7 MPA-JHU catalog"}
     for tag, scale in (("raw", 1.0), ("rescaled", ha_scale)):
         s25 = zc & (sn / scale > 25)
         r = {"n_sn25": int(s25.sum()), "agn": round(float(np.isin(bpt[s25], [3, 4, 5]).mean()), 3)}
@@ -415,7 +415,7 @@ def m10_reconstruction(ha_scale):
         dmf = dmf[np.isfinite(dmf)]
         r["mtot_mfib_median"], r["mtot_mfib_std"] = round(float(np.median(dmf)), 3), round(float(np.std(dmf)), 3)
         out[tag] = r
-    # M10-style fibre SFRs for the raw-error M10-like sample
+    # M10-style fiber SFRs for the raw-error M10-like sample
     s = zc & (sn > 25) & np.isin(bpt, [1, 2]) & (df.f_hb.to_numpy() > 0) & (df.log_sfr_fib.to_numpy() > -10)
     with np.errstate(divide="ignore", invalid="ignore"):
         bd = (df.f_ha / df.f_hb).to_numpy()[s]
@@ -620,7 +620,7 @@ def rel_KE08(conv):
     Robust cubic y = a + b x + c x^2 + d x^3 (the table note misprints it as a+bx+bx^2+bx^3),
     PP04 O3N2 row: a = 32.1488, b = -8.51258, c = 0.976384, d = -0.0359763, rms 0.10.
     SDSS DR4, masses from T04/Kauffmann+03a (Kroupa, H0 = 70; the paper itself adopts h=0.72 but
-    uses those masses). Medians in 0.2-dex bins centred 8.6..11.0. Same calibration as our
+    uses those masses). Medians in 0.2-dex bins centered 8.6..11.0. Same calibration as our
     OH_PP04 (8.73 - 0.32 O3N2). Conversions: none."""
     x = grid(8.5, 11.0)
     y = 32.1488 - 8.51258 * x + 0.976384 * x ** 2 - 0.0359763 * x ** 3
@@ -638,7 +638,7 @@ def rel_KE08(conv):
                   ("KE08", "ms.tex", r"The SDSS stellar masses were derived by \citet{Tremonti04} and \citet{Kauffmann03a}")],
         meta=dict(arxiv=ARXIV["KE08"], where="Table 2, PP04 O3N2 row", imf="Kroupa (T04/K03a masses)",
                   cosmo="masses from K03a/T04 (H0=70); paper adopts h=0.72, Om=0.29",
-                  calib="PP04 O3N2, same as our OH_PP04", validity="bins centred at log M* = 8.6 to 11.0"))
+                  calib="PP04 O3N2, same as our OH_PP04", validity="bins centered at log M* = 8.6 to 11.0"))
 
 
 def _t04(x):
@@ -720,7 +720,7 @@ def rel_M10(conv):
     12+log(O/H) = 8.90 + 0.39x - 0.20x^2 - 0.077x^3 + 0.064x^4, mu_0.32 = log M* - 0.32 log SFR.
     Table 1 spans log M* 9.10-11.35 and log SFR -1.45..+0.80, i.e. mu_0.32 ~ 9.2-11.4.
     Masses: MPA-JHU (K03a) divided by 1.06 to Chabrier. SFRs: dust-corrected Halpha INSIDE the
-    3" fibre with Kennicutt (1998) scaled to Chabrier. O/H: Maiolino+08 (average of N2 and R23).
+    3" fiber with Kennicutt (1998) scaled to Chabrier. O/H: Maiolino+08 (average of N2 and R23).
     Conversions to our mu_0.32 (total SFR, Kroupa):
       + log 1.06 = 0.025 (mass IMF), - 0.32 x 0.027 (SFR IMF, MD14),
       - 0.32 x Delta_ap with Delta_ap = median MPA-JHU log SFR_tot - log SFR_fib for an
@@ -746,21 +746,21 @@ def rel_M10(conv):
         notes="Projection of the fundamental metallicity relation onto μ0.32 = log M★ − 0.32 log SFR. "
               "M10 used the Maiolino et al. (2008) O/H calibrations, whose zero point and dynamic range differ from PP04 O3N2. "
               "For this reason the site shifts the curve in y to the median of the data, and the shape is only a guide. "
-              "M10 used SFRs inside the 3 arcsec fibre, while our SFRs are totals.",
+              "M10 used SFRs inside the 3 arcsec fiber, while our SFRs are totals.",
         conversions=f"μ0.32 {sg(dx)} dex in total. This is {sg(conv['m10_mass_factor_dex'])} for the mass IMF (M10 divided the "
                     f"MPA-JHU masses by 1.06), −0.32 × {conv['imf_sfr_chab_to_kroupa']:.3f} for the SFR IMF, and −0.32 × {ap:.3f} "
-                    f"for fibre versus total SFR. The {ap:.3f} dex is the median MPA-JHU aperture correction for galaxies "
-                    f"selected as in M10, with the S/N(Hα) > 25 cut on the catalogue errors as M10 applied it. This selection "
+                    f"for fiber versus total SFR. The {ap:.3f} dex is the median MPA-JHU aperture correction for galaxies "
+                    f"selected as in M10, with the S/N(Hα) > 25 cut on the catalog errors as M10 applied it. This selection "
                     f"gives N = {n_sel:,}, close to the {n_paper:,} of M10. It is {bm[k_lo]:.2f} dex at log M★ = {rng_txt(k_lo)} "
                     f"and {bm[k_hi]:.2f} dex at log M★ = {rng_txt(k_hi)}.",
-        source="arXiv:1005.0006 eq. 4 (projection), sec. 2 (sample, IMF, fibre SFRs)",
+        source="arXiv:1005.0006 eq. 4 (projection), sec. 2 (sample, IMF, fiber SFRs)",
         excerpts=[("M10", "fmr4.tex", r"12+log(O/H) = 8.90 + 0.39x -0.20x^2 - 0.077x^3 +0.064x^4"),
                   ("M10", "fmr4.tex", r"where $x=\mu_{0.32}-10$."),
                   ("M10", "fmr4.tex", r"with a correction factor of 1.06 to scale the masses down from a \cite{Kroupa01} to a \cite{Chabrier03} initial mass function (IMF)."),
                   ("M10", "fmr4.tex", r"SFRs inside the spectroscopic aperture were measured from the \ha\ emission line flux corrected for dust extinction"),
                   ("M10", "fmr4.tex", r"We selected emission-line galaxies with redshift between 0.07 and 0.30")],
         meta=dict(arxiv=ARXIV["M10"], where="eq. 4 (mu_0.32 quartic); eq. 2 is the fit in M* and SFR", imf="Chabrier (masses = MPA-JHU / 1.06)",
-                  cosmo="MPA-JHU (H0=70)", calib="Maiolino+08 (N2 and R23 average); fibre Halpha SFRs",
+                  cosmo="MPA-JHU (H0=70)", calib="Maiolino+08 (N2 and R23 average); fiber Halpha SFRs",
                   validity="mu_0.32 about 9.2 to 11.4 (M10 Table 1 grid)"))
 
 
@@ -1086,7 +1086,7 @@ def rel_B03(conv):
     log R_o = a log sigma + b log I_o + c with a = 1.49, b = -0.75, c = -8.778 and
     mu = -2.5 log I_o, so log R_o = 1.49 log sigma + 0.30 mu_o - 8.778. Native combo
     x = {logSigV: 1.49, mu50: 0.30} (= the preset), y = logR50, and the relation is
-    y = x - 8.778. B03: de Vaucouleurs R_o (circularised, h70^-1 kpc), sigma corrected to R_o/8,
+    y = x - 8.778. B03: de Vaucouleurs R_o (circularized, h70^-1 kpc), sigma corrected to R_o/8,
     mu_o K- and evolution-corrected; ~9000 early types, 0.01 <= z <= 0.3. Our R50/mu50 are
     Petrosian and not K-corrected, so fitOffset = true. Range: B03 mean x = 1.49*2.200 +
     0.3*19.87 = 9.24 with rms ~0.25; we draw 8.5-10.2 to cover the data."""
@@ -1220,7 +1220,7 @@ def rel_Mo13(conv):
               f"z = {Z_REF}. Mo13 halo masses are M200c (200 times the critical density) with h = 0.704. "
               "Our halo masses are Lim et al. (2017) group masses, defined as M180m (180 times the mean density) "
               "and found by abundance matching.",
-        conversions=f"Halo mass from M200c to M180m for NFW haloes with Duffy et al. (2008) concentrations "
+        conversions=f"Halo mass from M200c to M180m for NFW halos with Duffy et al. (2008) concentrations "
                     f"({sg(h['11'], 2)} dex at 10¹¹ and {sg(h['14'], 2)} dex at 10¹⁴ M☉), plus {sg(math.log10(0.704 / H_OURS), 4)} dex "
                     f"for h = 0.704 to 0.7. Stellar mass {sg(conv['imf_mass_chab_to_kroupa'])} dex (Chabrier to Kroupa) and "
                     f"{sg(2 * math.log10(0.704 / H_OURS), 4)} dex (h).",
@@ -1256,7 +1256,7 @@ def rel_B13(conv):
         {"logMh": 1.0}, {"logM": 1.0}, "fit", [curve(x, y, "dashed")],
         notes=f"Median central galaxy stellar mass versus halo mass at z = {Z_REF}. "
               "B13 halo masses are virial masses (Bryan & Norman 1998) with h = 0.7.",
-        conversions=f"Halo mass from Mvir to M180m for NFW haloes with Duffy et al. (2008) concentrations "
+        conversions=f"Halo mass from Mvir to M180m for NFW halos with Duffy et al. (2008) concentrations "
                     f"({sg(h['11'], 2)} dex at 10¹¹ and {sg(h['14'], 2)} dex at 10¹⁴ M☉). Stellar mass "
                     f"{sg(conv['imf_mass_chab_to_kroupa'])} dex (Chabrier to Kroupa).",
         source="arXiv:1207.6105 eq. 3 and sec. 5 best-fit parameters",
@@ -1304,7 +1304,7 @@ def rel_C18(conv):
                   ("C18", "table_hi_avgs.tex", r"Weighted median of logarithm of gas fraction; \hi\ mass of non-detections set to upper limit."),
                   ("C18", "xgass.tex", r"Stellar masses are from the Max Planck Institute for Astrophysics (MPA)/Johns Hopkins University (JHU) value-added catalog based on SDSS DR7"),
                   ("C18", "xgass.tex", r"and assume a \citet{chabrier03} initial mass function.")],
-        meta=dict(arxiv=ARXIV["C18"], where="Table 1, log M* block, column (b)", imf="MPA-JHU DR7 values (labelled Chabrier)",
+        meta=dict(arxiv=ARXIV["C18"], where="Table 1, log M* block, column (b)", imf="MPA-JHU DR7 values (labeled Chabrier)",
                   cosmo="H0=70, Om=0.3, OL=0.7", calib="Arecibo H I; non-detections at upper limits", validity="<log M*> = 9.14 to 11.20"))
 
 
@@ -1353,7 +1353,7 @@ REVIEW = {
     "KE08": ("verified", "Table 2 PP04 O3N2 row (32.1488, −8.51258, 0.976384, −0.0359763). The column header is a, b, c, d; the table note misprints the form. Masses T04/K03a (Kroupa). Same O3N2 formula as our OH_PP04."),
     "AM13": ("verified", "eq. 5 and Table 4 row MZR (log M_TO = 8.901, asymptote 8.798, γ = 0.640, fit 7.4 to 10.5); MPA-JHU DR7 total masses. The direct (Te) O/H scale is drawn on OH_PP04, which is an axis approximation."),
     "C20": ("verified", "eq. 2 and its table (Z0 = 8.793, log M0 = 10.02, γ = 0.28, β = 1.2), trusted for 7.95 < log M★ < 11.85. C20 do not state their Kroupa to Chabrier factor. The MD14 factor (0.034 dex) is used; M10's 1.06 would give 0.025 dex."),
-    "M10": ("corrected", "eq. 4 quartic with x = μ0.32 − 10; μ0.32 range 9.2 to 11.4 from the populated Table 1 bins; masses K03a/1.06; SFRs inside the fibre (sec. 2.1 and 4). The x conversion was corrected, see below."),
+    "M10": ("corrected", "eq. 4 quartic with x = μ0.32 − 10; μ0.32 range 9.2 to 11.4 from the populated Table 1 bins; masses K03a/1.06; SFRs inside the fiber (sec. 2.1 and 4). The x conversion was corrected, see below."),
     "RP15": ("verified", "Ridge line log SFR = 0.76 log M★ − 7.64 (text below Fig. 3); SDSS DR7, 0.02 < z < 0.085, AGN excluded, no star forming preselection. The ridge of their Fig. 4 follows the formula. The IMF is not stated."),
     "S14": ("verified", "eq. 28 (the preferred 'mixed' fit); t is the age of the Universe in Gyr for (h, Ωm, ΩΛ) = (0.7, 0.3, 0.7), 12.166 Gyr at z = 0.1; fitted mass range 9.7 to 11.1; Kroupa. The fit spans z ≈ 0.25 to 2.75, so z = 0.1 is an extrapolation."),
     "S16": ("verified", "eq. 5 cubic; SDSS DR7 at 0.01 < z < 0.05; MPA-JHU masses; NUV + WISE SFRs scaled by 0.94 to Chabrier, which +0.027 dex undoes."),
@@ -1371,7 +1371,7 @@ REVIEW = {
     "Mo13": ("verified", "eq. 2, the z/(z+1) evolution and Table 1; masses in M☉ for h = 0.704, M200c, Chabrier. The halo conversion was re-derived with a separate NFW and Duffy+08 code (+0.135 dex at 10¹² M☉)."),
     "B13": ("verified", "eq. 3 and the sec. 5 parameters; median M★ at fixed Mvir (Bryan & Norman), h = 0.7, Ωm = 0.27, Chabrier. Halo conversion re-derived (+0.059 dex at 10¹² M☉). B13's nuisance offset μ(z = 0.1) = −0.027 dex between measured and true M★ is not applied."),
     "Q11e": ("verified", "as Q11."),
-    "C18": ("corrected", "Table 1 log M★ block, weighted medians with non-detections at their upper limits; MPA-JHU DR7 masses (labelled Chabrier, used as given). The drawn polyline was corrected, see below."),
+    "C18": ("corrected", "Table 1 log M★ block, weighted medians with non-detections at their upper limits; MPA-JHU DR7 masses (labeled Chabrier, used as given). The drawn polyline was corrected, see below."),
     "H12": ("verified", "eq. 1 (0.712 and 3.117 below 10⁹, 0.276 and 7.042 above): mean log M_HI in 0.5 dex bins of log M★ for α.40 detections; Chabrier, h = 0.7."),
 }
 
@@ -1393,7 +1393,7 @@ SECOND_REVIEW = {
     "KE08": ("verified", "The PP04 O3N2 row of Table 2 was read again. The fit is y = a + bx + cx² + dx³ with x = log M in M☉, and the table note that prints 'bx²+bx³' is a misprint. The masses are the T04 and K03a masses with a Kroupa IMF, not Salpeter masses, because the T04 row of the same table reproduces T04 eq. 3.", 5.9e-5, "a52bd421f5d0"),
     "AM13": ("verified", "Eq. 5 and the MZR row of Table 4 were read again (8.901, 8.798, 0.640, fitted over 7.4 to 10.5). The masses are MPA-JHU DR7 total masses with no IMF change, and the cosmology is H0 = 70 and Ωm = 0.3.", 6.2e-5, "fb4d1e3ab954"),
     "C20": ("verified", "Eq. 2 and its table were read again (8.793, 10.02, 0.28, 1.2), with the trusted range of 7.95 to 11.85. Below M0 the formula is a power law of index γ, as C20 state. C20 rescaled the MPA-JHU masses to a Chabrier IMF without giving the factor, so the MD14 value of +0.034 dex is a fair way to undo it.", 5.1e-5, "7f9bc9708d7e"),
-    "M10": ("verified", "Eq. 4 with x = μ0.32 − 10 was read again. M10 divided the MPA-JHU masses by 1.06 and used K98 Hα SFRs inside the fibre, and the populated Table 1 bins span μ0.32 = 9.23 to 11.43. M10 give their own sample counts in sec. 2.1. Of 927,552 DR7 galaxies, 47 % (436k) are emission line galaxies at 0.07 < z < 0.30, 43 % of these pass S/N(Hα) > 25, and 22 % are AGN. With the catalogue errors as given, our parent sample gives 405k to 450k galaxies, 41 to 45 % and 20 %. With the errors rescaled by 2.473 it gives 13 to 15 % and 15 %. This confirms the correction of the first review.", 6.5e-5, "cdfb39cec054"),
+    "M10": ("verified", "Eq. 4 with x = μ0.32 − 10 was read again. M10 divided the MPA-JHU masses by 1.06 and used K98 Hα SFRs inside the fiber, and the populated Table 1 bins span μ0.32 = 9.23 to 11.43. M10 give their own sample counts in sec. 2.1. Of 927,552 DR7 galaxies, 47 % (436k) are emission line galaxies at 0.07 < z < 0.30, 43 % of these pass S/N(Hα) > 25, and 22 % are AGN. With the catalog errors as given, our parent sample gives 405k to 450k galaxies, 41 to 45 % and 20 %. With the errors rescaled by 2.473 it gives 13 to 15 % and 15 %. This confirms the correction of the first review.", 6.5e-5, "cdfb39cec054"),
     "RP15": ("corrected", "The ridge line log SFR = 0.76 log M★ − 7.64 (text below Fig. 3) was read again. It is a fit to the ridge of the V/Vmax weighted number density in Fig. 4. In Fig. 4, which we rendered from the source, the ridge is visible from 10^8.3 to 10^10.5 M☉. The conversions text gave an IMF uncertainty about 40 times too large (see the correction). The curve is unchanged.", 8.0e-6, "8b6447b1fab4"),
     "S14": ("verified", "Eq. 28 (the 'Mixed' fit, which S14 prefer) was read again. The variable t is the age of the Universe in Gyr, and a separate integral gives 12.166 Gyr at z = 0.1 for (h, Ωm, ΩΛ) = (0.7, 0.3, 0.7). The IMF is Kroupa, the fitted mass range is 9.7 to 11.1, and the SDSS studies were left out of the fit.", 6.8e-5, "2569db9ce108"),
     "S16": ("verified", "Eq. 5 was read again. It is a cubic in x = log M★ with no constant term, fitted to galaxies at 0.01 < z < 0.05 with M★ > 10⁸ M☉. SFR_UV was calibrated for a Kroupa IMF and then scaled down by 6 % to Chabrier, and S16 quote all quantities for Chabrier, so +0.027 dex undoes the scaling. The masses are MPA-JHU values used as given, like ours.", 1.1e-4, "a08226eda712"),
@@ -1591,9 +1591,9 @@ def review_corrections(conv):
     old = base - 0.32 * ap.get("median_rescaled", 0.2865)
     new = base - 0.32 * ap["median"]
     return {
-        "M10": (f"μ0.32 shift {sg(old)} → {sg(new)} dex, so the curve moves {sg(new - old)} dex in x. The fibre to total SFR "
+        "M10": (f"μ0.32 shift {sg(old)} → {sg(new)} dex, so the curve moves {sg(new - old)} dex in x. The fiber to total SFR "
                 f"offset came from an M10-like sample cut on the rescaled Hα errors (N = {ap.get('n_rescaled', 50144):,}, median "
-                f"{ap.get('median_rescaled', 0.2865):.3f} dex). M10 cut on the catalogue errors as given; that cut gives "
+                f"{ap.get('median_rescaled', 0.2865):.3f} dex). M10 cut on the catalog errors as given; that cut gives "
                 f"N = {ap['n']:,}, against the {ap.get('n_m10_paper', M10_N_FINAL):,} of M10, and a median of {ap['median']:.3f} dex."),
         "C18": ("The 85 point polyline passed through only 2 of the 8 Table 1 medians and cut the corners by up to 0.011 dex. "
                 "The medians are now vertices of the polyline."),
@@ -1974,7 +1974,7 @@ def verify_plot(rels, conv):
     a.set_title("SF ridge − RP15, by redshift slice", color=cream, fontsize=10.5)
     a.set_xlabel("log M★", color=cream2, fontsize=8.5)
     a.set_ylabel("Δ log SFR", color=cream2, fontsize=8.5)
-    # 14 M10 mapping between M10's mu (fibre SFR, Chabrier) and ours
+    # 14 M10 mapping between M10's mu (fiber SFR, Chabrier) and ours
     a = ax[13]
     a.set_facecolor(bg)
     for s in a.spines.values():
@@ -2181,7 +2181,7 @@ def _md_combo(c):
 
 CONV_SHORT = {
     "T04": "none", "KE08": "none", "AM13": "none (drawn on OH_PP04)", "C20": "M★ Chabrier→Kroupa (drawn on OH_PP04)",
-    "M10": "μ: IMF and fibre→total SFR; y offset fit", "RP15": "none", "S14": "none (t at z = 0.1)",
+    "M10": "μ: IMF and fiber→total SFR; y offset fit", "RP15": "none", "S14": "none (t at z = 0.1)",
     "S16": "SFR Chabrier→Kroupa", "Q11": "none", "RP15s": "none", "Q11s": "none",
     "S03L": "R: Sérsic z→Petrosian r", "S03E": "R: Sérsic z→Petrosian r; b from erratum",
     "K03S": "Σ: z→r band radius", "Q11d": "none", "B03": "zero point fit", "K03": "none", "K01": "none",
@@ -2191,7 +2191,7 @@ CONV_SHORT = {
 
 
 def _fp_alignment():
-    """|cos| between the B03 and HB09 native x axes in our standardised units (manifest scales)."""
+    """|cos| between the B03 and HB09 native x axes in our standardized units (manifest scales)."""
     sc = {"logSigV": 0.192, "mu50": 0.735}
     if MANIFEST.exists():
         for d in json.loads(MANIFEST.read_text()).get("dims", []):
@@ -2262,11 +2262,11 @@ def _second_review_md(rels, conv, vs):
                  f"{round(m10['n_el'], -3):,}) are emission line galaxies at 0.07 < z < 0.30. Of these, "
                  f"{100 * m10['pass_sn25']:.0f} percent pass S/N(Hα) > 25, and {100 * m10['agn']:.0f} percent of the sample "
                  "are AGN. We took galaxies with S/N(Hα) above "
-                 "2 or above 3 as emission line galaxies. With the catalogue errors as given, our parent sample has "
+                 "2 or above 3 as emission line galaxies. With the catalog errors as given, our parent sample has "
                  f"{rng(raw, 'n_el')[0]:,} to {rng(raw, 'n_el')[1]:,} such galaxies. Of these, {pct(rng(raw, 'pass_el')[0])} to "
                  f"{pct(rng(raw, 'pass_el')[1])} percent pass the cut, and {pct(raw['agn'])} percent of those are AGN. With the "
                  f"errors rescaled by {ap['ha_err_scale']}, only {pct(rng(res, 'pass_el')[0])} to {pct(rng(res, 'pass_el')[1])} "
-                 f"percent pass, and {pct(res['agn'])} percent are AGN. So M10 cut on the catalogue errors, which supports the "
+                 f"percent pass, and {pct(res['agn'])} percent are AGN. So M10 cut on the catalog errors, which supports the "
                  f"correction of the first review. One number points the other way. M10 give log M_tot − log M_fib = "
                  f"{m10['mtot_mfib']:.2f} ± 0.15, and our raw and rescaled selections give {raw['mtot_mfib_median']:.3f} and "
                  f"{res['mtot_mfib_median']:.3f}. That difference is small compared with the spread of 0.15.")
@@ -2274,11 +2274,11 @@ def _second_review_md(rels, conv, vs):
         if k98:
             vals = sorted(-v for v in k98.values())
             lo, hi = vals[0], vals[-1]
-            L.append("- M10 fibre SFRs. M10 computed their own fibre SFRs from Hα with the Kennicutt (1998) formula. We rebuilt "
-                     "such SFRs from the catalogue fibre fluxes, with a Balmer decrement correction and the Cardelli et al. (1989) "
-                     f"law. They lie {lo:.2f} to {hi:.2f} dex below the MPA-JHU fibre SFRs moved to Chabrier. The value depends on "
+            L.append("- M10 fiber SFRs. M10 computed their own fiber SFRs from Hα with the Kennicutt (1998) formula. We rebuilt "
+                     "such SFRs from the catalog fiber fluxes, with a Balmer decrement correction and the Cardelli et al. (1989) "
+                     f"law. They lie {lo:.2f} to {hi:.2f} dex below the MPA-JHU fiber SFRs moved to Chabrier. The value depends on "
                      "the factor that moves the Kennicutt (1998) SFRs from Salpeter to Chabrier (1/0.63, 1.7 or 1.8), and M10 do "
-                     "not give it. We assume that the two fibre SFRs agree. If they do not, the μ0.32 shift of M10 is "
+                     "not give it. We assume that the two fiber SFRs agree. If they do not, the μ0.32 shift of M10 is "
                      f"too small by {0.32 * lo:.2f} to {0.32 * hi:.2f} dex. That is small compared with the other uncertainties "
                      "of the M10 curve, so we did not change it.")
     if bs:
@@ -2359,9 +2359,9 @@ def write_markdown(rels, conv, conv_rows, stats, vs=None):
           f"{sg(conv['imf_sfr_chab_to_kroupa'], 4)} dex. Madau & Dickinson (2014) divide masses by 0.61 (Chabrier) and "
           "0.66 (Kroupa) to get Salpeter masses, and they divide SFRs by 0.63 and 0.67.",
           f"- M10 divided the MPA-JHU masses by 1.06, which is {conv['m10_mass_factor_dex']:.4f} dex.",
-          f"- M10 used SFRs inside the fibre. For MPA-JHU galaxies selected as in M10 (BPT classes 1 and 2, "
+          f"- M10 used SFRs inside the fiber. For MPA-JHU galaxies selected as in M10 (BPT classes 1 and 2, "
           f"0.07 < z < 0.30, Hα S/N > 25 after the ×{ap['ha_err_scale']} error rescaling, N = {ap['n']:,}), the median "
-          f"log SFR(total) − log SFR(fibre) is {ap['median']:.3f} dex, with 16th and 84th percentiles of {ap['p16']} "
+          f"log SFR(total) − log SFR(fiber) is {ap['median']:.3f} dex, with 16th and 84th percentiles of {ap['p16']} "
           f"and {ap['p84']}. It depends on mass. " + " ".join(f"It is {sg(v)} dex for log M★ = {k.replace('-', ' to ')}." for k, v in ap["by_mass"].items()),
           f"- For the r band versus z band size, we took {rz['n']:,} SDSS DR17 Main Galaxy Sample galaxies from one "
           f"SkyServer query (`R50_SQL` in the script). The median log(petroR50_r/petroR50_z) is {sg(rz['late'], 4)} for "
@@ -2378,7 +2378,7 @@ def write_markdown(rels, conv, conv_rows, stats, vs=None):
           " for late types and " + ", ".join(f"{sg(v)} at 10^{k}" for k, v in conv["s03_petro_minus_sersic"]["early"].items()) +
           " for early types.",
           f"- The age of the universe at z = {Z_REF} for h = 0.7 and Ωm = 0.3 is {conv['age_z0p1_gyr_S14']:.3f} Gyr (used for S14).",
-          "- Halo masses are converted to M180m for NFW haloes with the Duffy et al. (2008) concentrations "
+          "- Halo masses are converted to M180m for NFW halos with the Duffy et al. (2008) concentrations "
           "(NFW, full sample, z = 0 to 2). The virial overdensity is from Bryan & Norman (1998). "
           "log M180m − log M200c for Mo13 is " + ", ".join(f"{sg(v)} at 10^{k}" for k, v in conv["halo_m180m_minus_m200c_Mo13"].items()) +
           ". log M180m − log Mvir for B13 is " + ", ".join(f"{sg(v)} at 10^{k}" for k, v in conv["halo_m180m_minus_mvir_B13"].items()) +
@@ -2415,7 +2415,7 @@ def write_markdown(rels, conv, conv_rows, stats, vs=None):
           "The conversion inputs were measured again. The r/z Petrosian radius ratio from an independent SkyServer sample "
           "(8,000 galaxies, objID mod 31 = 17) is +0.0297 (C < 2.86), +0.0241 (C ≥ 2.86) and +0.0277 (all), against "
           f"{sg(rz['late'], 4)}, {sg(rz['early'], 4)} and {sg(rz['all'], 4)} from the cached sample. The M10 aperture offset "
-          "was measured again from the MPA-JHU catalogue and corrected (below).", "",
+          "was measured again from the MPA-JHU catalog and corrected (below).", "",
           f"Result: {res_count['verified']} relations verified, {res_count['corrected']} corrected, {res_count['removed']} removed.", "",
           "### Corrections", ""]
     for rid, txt in corr.items():
@@ -2521,8 +2521,8 @@ def write_markdown(rels, conv, conv_rows, stats, vs=None):
           "color `logSFR`, literature `KE08, AM13, C20`), added by the core agent on this recommendation. The `mzr` preset "
           "lists `T04` only. KE08, AM13 and C20 carry view `mzr2`, the preset they belong to.",
           "- FMR. M10 goes on `OH_PP04` (the FMR preset y) with fitOffset true. M10 used the Maiolino et al. (2008) "
-          "calibrations, whose zero point and range differ from PP04 O3N2. The x conversion (IMF and fibre SFR) is "
-          "applied to the curve. The fibre to total SFR offset comes from an M10-like sample cut on the raw Hα errors, "
+          "calibrations, whose zero point and range differ from PP04 O3N2. The x conversion (IMF and fiber SFR) is "
+          "applied to the curve. The fiber to total SFR offset comes from an M10-like sample cut on the raw Hα errors, "
           "which reproduces the size of the M10 sample.",
           "- Presets. The literature lists in `site/js/config/presets.js` (read on 2026-09-24) name only ids that exist, "
           "and each relation's native axes match its preset's axes, so every listed relation is drawn at full opacity in "
@@ -2549,10 +2549,10 @@ def write_markdown(rels, conv, conv_rows, stats, vs=None):
           "- The r/z radius ratio used for S03 is the median over all angular sizes. For the Sérsic radii of S03, which are "
           "corrected for seeing, the ratio of large galaxies may apply instead. That would raise both S03 curves by about "
           "0.02 dex (see the second review).",
-          "- M10 computed their fibre SFRs from Hα with the Kennicutt (1998) formula, and we use the MPA-JHU fibre "
+          "- M10 computed their fiber SFRs from Hα with the Kennicutt (1998) formula, and we use the MPA-JHU fiber "
           f"SFRs in their place. SFRs rebuilt in the M10 way lie {k98_lo:.2f} to {k98_hi:.2f} dex lower, so the M10 curve may "
           f"need to move a further {0.32 * k98_lo:.2f} to {0.32 * k98_hi:.2f} dex to lower μ0.32 (see the second review).",
-          f"- The fibre SFR correction for M10 is one median value ({ap['median']:.3f} dex). In bins of our μ0.32, the median "
+          f"- The fiber SFR correction for M10 is one median value ({ap['median']:.3f} dex). In bins of our μ0.32, the median "
           f"of μ_tot − μ_M10 for the M10-like sample stays within {m10_dev:.3f} dex of the constant shift over μ0.32 = "
           f"{m10_rng[0]} to {m10_rng[1]}, so a constant is adequate there. M10's O/H calibration (Maiolino et al. 2008) "
           f"also has a different dynamic range from PP04 O3N2, so after fitOffset only the zero point is matched and the "

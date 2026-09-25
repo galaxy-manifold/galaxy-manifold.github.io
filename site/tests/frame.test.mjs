@@ -500,7 +500,7 @@ describe('data loader helpers', () => {
     assert.equal(await ld.gunzipIfNeeded(s), s);   // plain bytes pass through untouched
   });
 
-  test('CatSpec normalisation accepts arrays and maps of codes', () => {
+  test('CatSpec normalization accepts arrays and maps of codes', () => {
     const a = ld.normalizeCatSpec({ key: 'bpt', codes: [{ code: 4, label: 'Sy' }, { code: 1, label: 'SF' }] }, 0);
     assert.deepEqual(a.codes.map((c) => c.code), [1, 4]);
     assert.equal(a.slot, 0);
@@ -586,6 +586,24 @@ describe('projection kernel', () => {
     assert.ok(checked > 200);
   });
 
+  test('projectRange needDim hides exactly the rows missing that dim', () => {
+    const F = fm.basisFrame(D, 0, 1);
+    const fade = fm.fadeFactors(F);
+    const masks = new Uint32Array(4).fill(0xffffffff);
+    const mk = () => ({ X: new Float32Array(n), Y: new Float32Array(n), vis: new Uint8Array(n), visf: new Float32Array(n) });
+    const all = mk(), need = mk();
+    kn.projectRange(ctx, { F, fade, zDim: -1, masks, needDim: -1 }, all, 0, n);
+    kn.projectRange(ctx, { F, fade, zDim: -1, masks, needDim: 6 }, need, 0, n);
+    let hidden = 0;
+    for (let i = 0; i < n; i++) {
+      if (raw[6][i] === 0) {
+        assert.equal(need.vis[i], 0);
+        if (all.vis[i]) hidden++;
+      } else assert.equal(need.vis[i], all.vis[i]);
+    }
+    assert.ok(hidden > 50);
+  });
+
   test('pick grid holds every visible point exactly once', () => {
     const F = fm.basisFrame(D, 0, 2);
     const out = { X: new Float32Array(n), Y: new Float32Array(n), vis: new Uint8Array(n), visf: new Float32Array(n) };
@@ -640,7 +658,7 @@ describe('camera and store', () => {
     assert.ok(p.aspect <= 2 + 1e-12 && p.aspect >= 0.5 - 1e-12);
     const iso = fitParams([-4, 4, -1, 1], 1000, 600, { pad: 0, maxAspect: 1 });
     assert.equal(iso.aspect, 1);
-    // the fitted box is centred in the safe area
+    // the fitted box is centered in the safe area
     const safe = { left: 100, right: 0, top: 0, bottom: 100 };
     const q = fitParams([0, 2, 0, 2], 1000, 600, { pad: 0, safe, maxAspect: 1 });
     const cc = new Camera(); cc.resize(1000, 600); cc.set(q);

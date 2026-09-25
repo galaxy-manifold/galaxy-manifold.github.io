@@ -154,7 +154,7 @@ export function initPresets(app, mount, ui) {
     if (!changed.includes('presetId') || !state.presetId) return;
     const item = items.get(state.presetId);
     if (item && tray.scrollWidth > tray.clientWidth + 2) {
-      // centre the cartridge (measured against the tray itself, not the offsetParent)
+      // center the cartridge (measured against the tray itself, not the offsetParent)
       const br = item.b.getBoundingClientRect(), tr = tray.getBoundingClientRect();
       const left = tray.scrollLeft + (br.left - tr.left) - tr.width / 2 + br.width / 2;
       tray.scrollTo({ left: Math.max(0, left), behavior: app.motion.reduced() ? 'auto' : 'smooth' });

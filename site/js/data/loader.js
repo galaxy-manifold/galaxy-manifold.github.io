@@ -13,7 +13,7 @@ import { percentileFromQuantiles, valueFromQuantiles } from '../math/stats.js';
 
 const CAT_SLOTS = 4;   // a_cats is a uvec4 (bpt, env, morph, spare)
 
-/** Sanitise a ?data= value to a relative path inside the site (default 'data'). */
+/** Sanitize a ?data= value to a relative path inside the site (default 'data'). */
 export function resolveBase(param) {
   const s = (param || '').trim();
   if (!s || s.includes('..') || s.includes('//') || s.includes(':') || s.startsWith('/') || s.includes('\\')
@@ -133,7 +133,7 @@ function typed(bytes, Ctor, n, url) {
   return new Ctor(bytes.slice().buffer);
 }
 
-/** Normalise a manifest CatSpec: codes → [{code, label, name, color}] sorted by code. */
+/** Normalize a manifest CatSpec: codes → [{code, label, name, color}] sorted by code. */
 export function normalizeCatSpec(spec, index) {
   let codes = [];
   const c = spec.codes;
@@ -174,7 +174,7 @@ export class Dataset {
         // integer decode: u = v * ua + ub  (v = raw uint16, 1..65535)
         ua: step / d.scale,
         ub: (d.min - step - d.center) / d.scale,
-        // shader decode on normalised val = v/65535 (§11)
+        // shader decode on normalized val = v/65535 (§11)
         A: (65535 * (d.max - d.min)) / (65534 * d.scale),
         B: (d.min - (d.max - d.min) / 65534 - d.center) / d.scale,
         step,
@@ -222,7 +222,7 @@ export class Dataset {
     return v === 0 ? NaN : d.min + (v - 1) * d.step;
   }
 
-  /** Standardised value u = (x − center)/scale, or NaN if missing. */
+  /** Standardized value u = (x − center)/scale, or NaN if missing. */
   ustd(i, k) {
     const d = this.dims[this.dimIndex(k)];
     const col = d && this.raw[d.index];

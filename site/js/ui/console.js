@@ -1,11 +1,12 @@
-// Console (DESIGN.md §13.4): mode rocker ✺/▦, colour-by dial with its colorbar or category
-// legend chips (chips toggle classes via the filter bitmask), overlay toggles, rotary knobs
+// Console (DESIGN.md §13.4): mode rocker ✺/▦, color-by dial with its colorbar or category
+// legend chips (chips toggle classes via the filter bitmask), a funnel that hides galaxies
+// without a value of the color variable (filters.needColor), overlay toggles, rotary knobs
 // for gain and point size, the z-filter histogram, and the mosaic cell-size knob with a
 // fit/true-scale switch (mosaic mode only).
 
 import { h, fmtInt } from './dom.js';
 import { icon } from './icons.js';
-import { setTip } from './tooltip.js';
+import { setTip, refreshTip } from './tooltip.js';
 import { createKnob } from './knob.js';
 import { createZFilter } from './zfilter.js';
 import { openColorPopover, closeColorPopover } from './colorpop.js';
@@ -20,20 +21,20 @@ export function initConsole(app, mount, ui) {
   // ------------------------------------------------------------------ mode rocker
   const bGlow = h('button', { class: 'rk-side', type: 'button', 'data-mode': 'glow', 'aria-label': 'Glow mode', html: icon('burst') });
   const bMosaic = h('button', { class: 'rk-side', type: 'button', 'data-mode': 'mosaic', 'aria-label': 'Mosaic mode', html: icon('grid') });
-  setTip(bGlow, { title: 'Glow', sub: 'Density as light; hue = colour variable', key: 'M' }, 'top');
+  setTip(bGlow, { title: 'Glow', sub: 'Density as light; hue = color variable', key: 'M' }, 'top');
   setTip(bMosaic, { title: 'Mosaic', sub: 'Tile the plane with the most typical galaxy of each cell', key: 'M' }, 'top');
   const rocker = h('div', { class: 'rocker', role: 'group', 'aria-label': 'Display mode' }, h('i', { class: 'rk-paddle', 'aria-hidden': 'true' }), bGlow, bMosaic);
   for (const b of [bGlow, bMosaic]) b.addEventListener('click', () => actions.setMode(b.dataset.mode));
 
-  // ------------------------------------------------------------------ colour dial + legend
+  // ------------------------------------------------------------------ color dial + legend
   const dialSym = h('span', { class: 'cd-sym' });
-  const dial = h('button', { class: 'cdial', type: 'button', 'aria-haspopup': 'dialog', 'aria-expanded': 'false', 'aria-label': 'Colour by' },
+  const dial = h('button', { class: 'cdial', type: 'button', 'aria-haspopup': 'dialog', 'aria-expanded': 'false', 'aria-label': 'Color by' },
     h('span', { class: 'cd-ring', 'aria-hidden': 'true' }), h('span', { class: 'cd-face' }, dialSym));
   setTip(dial, () => {
     const c = app.colorInfo();
-    if (c.mode === 'continuous') return { title: `Colour: ${dimTitle(c.spec)}`, sub: 'Hue = mean of the colour variable per pixel; click to change', key: 'C' };
-    if (c.mode === 'categorical') return { title: `Colour: ${c.spec.label}`, sub: 'Hue = mix of classes per pixel; click to change', key: 'C' };
-    return { title: 'Colour by…', sub: 'Density only', key: 'C' };
+    if (c.mode === 'continuous') return { title: `Color: ${dimTitle(c.spec)}`, sub: 'Hue = mean of the color variable per pixel; click to change', key: 'C' };
+    if (c.mode === 'categorical') return { title: `Color: ${c.spec.label}`, sub: 'Hue = mix of classes per pixel; click to change', key: 'C' };
+    return { title: 'Color by…', sub: 'Density only', key: 'C' };
   }, 'top');
   dial.addEventListener('click', () => openColorPopover(app, dial));
 
@@ -42,7 +43,42 @@ export function initConsole(app, mount, ui) {
   const chips = h('div', { class: 'chips', role: 'group', 'aria-label': 'Classes' });
   const pills = h('div', { class: 'fpills', role: 'group', 'aria-label': 'Active category filters' });
   const legend = h('div', { class: 'legend' }, cbar, chips);
-  const colorGroup = h('div', { class: 'con-group con-color' }, dial, legend, pills);
+
+  // hide galaxies without a value of the color variable
+  const bNeed = h('button', { class: 'tog ibtn tog-need', type: 'button', 'aria-pressed': 'false', 'aria-label': 'Only galaxies with a color value', html: icon('funnel') });
+  setTip(bNeed, () => {
+    const c = app.colorInfo();
+    if (c.mode === 'none') return { title: 'Only galaxies with a color value', sub: 'Pick a color variable first', key: 'V' };
+    const on = !!store.get().filters.needColor;
+    const cat = c.mode === 'categorical';
+    const name = cat ? `a ${c.spec.label} class` : dimTitle(c.spec);
+    const miss = missingOf(c);
+    return {
+      title: on ? `Only galaxies with ${name}` : `Hide galaxies without ${name}`,
+      sub: miss ? `${fmtInt(miss)} of ${fmtInt(data.n)} galaxies have no ${cat ? 'class' : 'value'}` : 'Every galaxy has a value; nothing to hide',
+      meta: on ? 'click to show all' : null,
+      key: 'V',
+    };
+  }, 'top');
+  bNeed.addEventListener('click', () => actions.setFilter({ needColor: !store.get().filters.needColor }));
+
+  const colorGroup = h('div', { class: 'con-group con-color' }, dial, legend, bNeed, pills);
+
+  /** Galaxies without a value of the current color variable. */
+  function missingOf(c) {
+    if (c.mode === 'continuous') return Math.max(0, data.n - (c.spec.nvalid ?? data.n));
+    if (c.mode === 'categorical') return catMissing(data, c.cat);
+    return 0;
+  }
+
+  function syncNeed() {
+    const c = app.colorInfo();
+    const on = !!store.get().filters.needColor;
+    bNeed.hidden = c.mode === 'none';
+    bNeed.setAttribute('aria-pressed', on ? 'true' : 'false');
+    bNeed.classList.toggle('moot', c.mode !== 'none' && missingOf(c) === 0);
+    refreshTip(bNeed);
+  }
 
   function ringCSS(c) {
     if (c.mode === 'continuous') {
@@ -79,7 +115,7 @@ export function initConsole(app, mount, ui) {
       cbar.querySelector('.cbar-grad').style.background = `linear-gradient(90deg, ${[0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1].map((t) => sampleColormapHex(c.cmap, t, c.reverse)).join(', ')})`;
       cbar.querySelector('.cbar-lo').textContent = config.dims.format(c.spec.key, c.range[0]);
       cbar.querySelector('.cbar-hi').textContent = config.dims.format(c.spec.key, c.range[1]);
-      setTip(cbar, { title: dimTitle(c.spec), sub: 'Colour range; values beyond it saturate', meta: `${config.dims.format(c.spec.key, c.range[0])} … ${config.dims.format(c.spec.key, c.range[1])}` }, 'top');
+      setTip(cbar, { title: dimTitle(c.spec), sub: 'Color range; values beyond it saturate', meta: `${config.dims.format(c.spec.key, c.range[0])} … ${config.dims.format(c.spec.key, c.range[1])}` }, 'top');
       chips.replaceChildren();
     } else if (c.mode === 'categorical') {
       dialSym.textContent = catToken(c.spec);
@@ -92,6 +128,7 @@ export function initConsole(app, mount, ui) {
     }
     syncChips();
     syncPills();
+    syncNeed();
   }
 
   function buildChips(c) {
@@ -139,12 +176,15 @@ export function initConsole(app, mount, ui) {
   function syncChips() {
     const c = app.colorInfo();
     if (c.mode !== 'categorical') return;
-    const m = (store.get().filters.cats?.[c.cat] ?? 0xff) & 0xff;
+    const f = store.get().filters;
+    const m = (f.cats?.[c.cat] ?? 0xff) & 0xff;
     for (const chip of chips.children) {
       const code = +chip.dataset.code;
       const on = ((m >> code) & 1) === 1;
       chip.classList.toggle('off', !on);
       chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+      // the funnel already hides the unclassified galaxies
+      if (code === 0) chip.hidden = !!f.needColor;
     }
   }
 
@@ -167,7 +207,7 @@ export function initConsole(app, mount, ui) {
     }
   }
 
-  // drop a rail token on the dial → colour by it
+  // drop a rail token on the dial → color by it
   ui.dnd?.addTarget({
     id: 'color-dial',
     accepts: () => true,
@@ -224,14 +264,14 @@ export function initConsole(app, mount, ui) {
     b.addEventListener('click', onClick);
     return b;
   };
-  const tTrends = tog('trends', 'trends', 'Trends', 'Running medians (16–84% band), split by the colour variable', 'T',
+  const tTrends = tog('trends', 'trends', 'Trends', 'Running medians (16–84% band), split by the color variable', 'T',
     () => actions.setOverlay('trends', !store.get().overlays.trends));
   const tLit = tog('lit', 'book', 'Literature', 'Published relations, drawn where the axes match theirs', 'B',
     () => actions.setOverlay('literature', !store.get().overlays.literature));
   const tLasso = tog('lasso', 'lasso', 'Lasso', 'Draw to select; shift adds, alt subtracts. The selection follows every rotation', 'L',
     () => actions.setTool(store.get().tool === 'lasso' ? 'pan' : 'lasso'));
   const bReset = h('button', { class: 'tog ibtn', type: 'button', 'aria-label': 'Reset the view', html: icon('reset') });
-  setTip(bReset, { title: 'Reset', sub: 'Clear the z filter and return to the current canonical view', key: 'R' }, 'top');
+  setTip(bReset, { title: 'Reset', sub: 'Clear the z and color-value filters and return to the current canonical view', key: 'R' }, 'top');
   bReset.addEventListener('click', () => actions.resetView());
   const bShare = h('button', { class: 'tog ibtn tog-share', type: 'button', 'aria-label': 'Copy a link to this view', html: icon('link') });
   setTip(bShare, { title: 'Share', sub: 'Copy a link to this exact view' }, 'top');
@@ -277,6 +317,7 @@ export function initConsole(app, mount, ui) {
     if (all || changed.includes('filters')) {
       syncChips();
       syncPills();
+      syncNeed();
     }
     if (all || changed.includes('overlays')) {
       tTrends.setAttribute('aria-pressed', s.overlays.trends ? 'true' : 'false');

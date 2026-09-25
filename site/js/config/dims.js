@@ -1,8 +1,8 @@
 // Per-dimension UI configuration: colormap, direction, grand-tour membership, number format
-// and colour-normalisation range (physical units).
+// and color-normalization range (physical units).
 //
-// Astronomical colour convention: red = old / red / quenched / dense, blue = star-forming /
-// gas-rich / young. The diverging `redshift` map is centred (cream) on the physically
+// Astronomical color convention: red = old / red / quenched / dense, blue = star-forming /
+// gas-rich / young. The diverging `redshift` map is centered (cream) on the physically
 // meaningful transition where there is one (green valley, Dn4000 ≈ 1.6, Σ★ ≈ 3×10⁸ …).
 // Dimensions missing from this table (e.g. future `learned` embeddings) get DEFAULT_DIM
 // and a quantile-based range.
@@ -52,7 +52,7 @@ export function defaultTourSet(dims) {
 }
 
 /**
- * Colour-normalisation range [lo, hi] in physical units for a DimSpec. Uses the configured
+ * Color-normalization range [lo, hi] in physical units for a DimSpec. Uses the configured
  * range when it overlaps the data's 1–99% range, otherwise the 2–98% quantiles.
  */
 export function colorRange(spec) {
