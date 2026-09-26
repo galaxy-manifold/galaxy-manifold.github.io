@@ -12,6 +12,7 @@
 import { percentileFromQuantiles, valueFromQuantiles } from '../math/stats.js';
 
 const CAT_SLOTS = 4;   // a_cats is a uvec4 (bpt, env, morph, spare)
+export const MAX_DIMS = 28;   // the renderer's 7 vec4 dimension attributes (gl/renderer.js MAXD)
 
 /** Sanitize a ?data= value to a relative path inside the site (default 'data'). */
 export function resolveBase(param) {
@@ -45,7 +46,7 @@ export async function loadManifest(base, { signal } = {}) {
   if (!res.ok) throw new LoadError(`HTTP ${res.status} for ${url}`, { url });
   const m = await res.json();
   if (!m || !Array.isArray(m.dims) || !(m.n > 0)) throw new LoadError(`malformed manifest ${url}`, { url });
-  if (m.dims.length > 24) console.warn(`manifest has ${m.dims.length} dims; only the first 24 are used`);
+  if (m.dims.length > MAX_DIMS) console.warn(`manifest has ${m.dims.length} dims; only the first ${MAX_DIMS} are used`);
   return m;
 }
 
@@ -166,7 +167,7 @@ export class Dataset {
     this.manifest = manifest;
     this.base = base;
     this.n = manifest.n;
-    this.dims = manifest.dims.slice(0, 24).map((d, index) => {
+    this.dims = manifest.dims.slice(0, MAX_DIMS).map((d, index) => {
       const step = (d.max - d.min) / 65534;
       return {
         ...d,

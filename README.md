@@ -2,7 +2,7 @@
 
 Conceptualized by [John Wu](https://jwuphysics.github.io) and implemented by Claude Opus 5.5.
 
-Galaxy Manifold is a website for exploring galaxy scaling relations. It shows 657,057 galaxies from the SDSS Main Galaxy Sample. Each galaxy is a point in a space of 20 measured properties, e.g., stellar mass. The screen shows a two-dimensional linear projection of that space.
+Galaxy Manifold is a website for exploring galaxy scaling relations. It shows 657,057 galaxies from the SDSS Main Galaxy Sample. Each galaxy is a point in a space of 22 measured properties, e.g., stellar mass. The screen shows a two-dimensional linear projection of that space.
 
 You can rotate the projection by hand, let it rotate on its own, or jump to a known view such as the mass-metallicity relation. Each jump is an animated rotation through the full space, so you can watch one relation turn into another.
 
@@ -25,14 +25,14 @@ The sample is every SDSS DR7 Main Galaxy Sample galaxy in the MPA-JHU DR8 catalo
 
 The properties come from these sources:
 
-- MPA-JHU DR8 (Kauffmann et al. 2003, Brinchmann et al. 2004, Tremonti et al. 2004, Salim et al. 2007) for stellar mass, star formation rate, metallicity, emission lines, Dn4000 and HδA.
+- MPA-JHU DR8 (Kauffmann et al. 2003, Brinchmann et al. 2004, Tremonti et al. 2004, Salim et al. 2007) for stellar mass, star formation rate, metallicity, emission lines, Dn4000, HδA and dust. The two dust properties are the stellar attenuation A_V from the fit to the fiber continuum, and the Balmer decrement Hα/Hβ, which measures dust in the ionized gas.
 - SDSS DR17 through the SkyServer SQL service for Petrosian sizes, magnitudes and axis ratios.
 - The Lim et al. (2017) SDSS group catalog for group halo mass, central or satellite, and k-corrected g−r color. This catalog covers only the northern part of the SDSS footprint.
 - ALFALFA α.100 (Haynes et al. 2018) for H I gas fractions of detected galaxies.
 - Galaxy Zoo 1 (Lintott et al. 2008, 2011) for morphology.
 - The Legacy Survey viewer's SDSS layer for the galaxy images.
 
-`DESIGN.md` section 6 lists all 20 properties and how each one is computed. The page stores two metallicity scales. One is the MPA-JHU value (T04). The other uses the O3N2 line ratio (Pettini and Pagel 2004). The two scales give opposite signs for the dependence of metallicity on star formation rate at fixed mass, so the FMR view uses the PP04 scale.
+`DESIGN.md` section 6 lists all 22 properties and how each one is computed. The page stores two metallicity scales. One is the MPA-JHU value (T04). The other uses the O3N2 line ratio (Pettini and Pagel 2004). The two scales give opposite signs for the dependence of metallicity on star formation rate at fixed mass, so the FMR view uses the PP04 scale.
 
 The 24 literature relations are in `site/data/literature.json`. Each coefficient was checked against the arXiv source of its paper and converted to this sample's conventions (Kroupa IMF, H0 = 70, Petrosian r-band radii). `pipeline/LITERATURE.md` lists each equation, its source, and the conversions.
 
@@ -61,20 +61,7 @@ Every download is cached in `pipeline/cache/`, so a second run sends no requests
 
 ## Deploy to GitHub Pages
 
-The workflow in `.github/workflows/pages.yml` runs the unit tests and publishes `site/` on every push to `main`. In the repository settings, set the Pages source to "GitHub Actions". The generated data in `site/data` is committed, because the pipeline needs local catalogs that GitHub does not have. It is about 58 MB, and about 30 MB of that is thumbnails.
-
-## Build the Artifact version
-
-```
-python3 tools/build_artifact.py
-```
-
-This writes `dist/artifact/` for publishing as a claude.ai Artifact. An Artifact can hold at most 255 files and 64 MB, and it serves only web file types. The build therefore makes these changes:
-
-- It packs the 15,994 thumbnails into 63 image sheets.
-- It stores the data columns as base64 text.
-- It turns off the large Legacy Survey image in the galaxy panel, because the Artifact host blocks images from other sites. The panel shows the small thumbnail when the galaxy has one.
-- It hides the share button, because Artifact links cannot carry the view state.
+The workflow in `.github/workflows/pages.yml` runs the unit tests and publishes `site/` on every push to `main`. In the repository settings, set the Pages source to "GitHub Actions". The generated data in `site/data` is committed, because the pipeline needs local catalogs that GitHub does not have. It is about 62 MB, and about 31 MB of that is thumbnails.
 
 ## Caveats
 
@@ -93,7 +80,7 @@ These are not built yet:
 - Axes based on the large-scale environmental graph's top eigenvalues.
 - More axes showing standard morphology parmaeters beyond concentration like asymmetry/smoothness or Gini-M20.
 
-The page reads its properties from `site/data/manifest.json`, so a new axis needs only a new data column and a manifest entry. The code handles up to 24 properties and has a group reserved for learned axes.
+The page reads its properties from `site/data/manifest.json`, so a new axis needs only a new data column and a manifest entry. The code handles up to 28 properties and has a group reserved for learned axes.
 
 ## Layout
 
@@ -102,5 +89,5 @@ DESIGN.md        the design and the data format that all the code follows
 pipeline/        Python scripts that build site/data
 site/            the website (plain JavaScript modules and WebGL2, no build step)
 site/data/       the generated data
-tools/           the synthetic test data generator and the Artifact build
+tools/           the synthetic test data generator
 ```

@@ -32,12 +32,22 @@ export function encodeFrame(F) {
   return b64urlEncode(new Uint8Array(q.buffer));
 }
 
+/**
+ * A frame from a link made when the manifest had fewer dims (D0 < D) is padded with zero
+ * weights, since new dims are only ever appended to the manifest.
+ */
 export function decodeFrame(str, D) {
   try {
     const bytes = b64urlDecode(str);
-    if (bytes.length !== 4 * D) return null;
-    const q = new Int16Array(bytes.buffer, bytes.byteOffset, 2 * D);
-    return Float64Array.from(q, (v) => v / 32767);
+    const D0 = bytes.length / 4;
+    if (!Number.isInteger(D0) || D0 < 2 || D0 > D) return null;
+    const q = new Int16Array(bytes.buffer, bytes.byteOffset, 2 * D0);
+    const F = new Float64Array(2 * D);
+    for (let i = 0; i < D0; i++) {
+      F[i] = q[i] / 32767;
+      F[D + i] = q[D0 + i] / 32767;
+    }
+    return F;
   } catch {
     return null;
   }

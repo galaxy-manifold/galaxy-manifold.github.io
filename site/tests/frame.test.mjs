@@ -684,3 +684,23 @@ describe('camera and store', () => {
     assert.deepEqual(s.get().filters.z, [0.02, 0.05]);
   });
 });
+
+describe('share-link frames', async () => {
+  const { encodeFrame, decodeFrame } = await import('../js/ui/urlstate.js');
+
+  test('a frame round-trips at int16 precision', () => {
+    const F = randomFrame(DIMS.map((d) => d.index));
+    const G = decodeFrame(encodeFrame(F), D);
+    for (let i = 0; i < 2 * D; i++) assert.ok(Math.abs(G[i] - F[i]) < 1 / 32767);
+  });
+
+  test('a frame from a link with fewer dims is padded with zero weights', () => {
+    const F = fm.basisFrame(D, I.logM, I.OH_PP04);
+    const G = decodeFrame(encodeFrame(F), D + 2);
+    assert.equal(G.length, 2 * (D + 2));
+    assert.equal(G[I.logM], 1);
+    assert.equal(G[D + 2 + I.OH_PP04], 1);
+    assert.equal(G.reduce((a, v) => a + Math.abs(v), 0), 2);
+    assert.equal(decodeFrame(encodeFrame(F), D - 1), null);   // more dims than the data has
+  });
+});

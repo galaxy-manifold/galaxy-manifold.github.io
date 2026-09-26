@@ -26,7 +26,9 @@ import { buildLUT, colormapRow } from './colormaps.js';
 import { NEUTRAL, SELECTION_COLOR, hexToRgb01 } from '../config/style.js';
 import { FADE_WIDTH } from '../math/frame.js';
 
-const MAXD = 24;
+const MAXD = 28;   // 7 vec4 attributes (data/loader.js MAX_DIMS)
+// Attribute location of dimension vec4 k: 0-5, then 8 (6 and 7 hold cats and selection).
+const DIM_LOC = [0, 1, 2, 3, 4, 5, 8];
 const GAMMA = 0.8;
 const FLOOR = 0.2;          // minimum luminance of an isolated, fully visible galaxy
 const UNSEL_DIM = 0.25;     // unselected light when a selection is active
@@ -267,13 +269,14 @@ export class Renderer {
     gl.bindVertexArray(this.vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vboDims);
     gl.bufferData(gl.ARRAY_BUFFER, buf, gl.STATIC_DRAW);
-    for (let k = 0; k < 6; k++) {
+    for (let k = 0; k < DIM_LOC.length; k++) {
+      const loc = DIM_LOC[k];
       if (k < nAttr) {
-        gl.enableVertexAttribArray(k);
-        gl.vertexAttribPointer(k, 4, gl.UNSIGNED_SHORT, true, S * 2, k * 8);
+        gl.enableVertexAttribArray(loc);
+        gl.vertexAttribPointer(loc, 4, gl.UNSIGNED_SHORT, true, S * 2, k * 8);
       } else {
-        gl.disableVertexAttribArray(k);
-        gl.vertexAttrib4f(k, 0, 0, 0, 0);
+        gl.disableVertexAttribArray(loc);
+        gl.vertexAttrib4f(loc, 0, 0, 0, 0);
       }
     }
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vboCats);

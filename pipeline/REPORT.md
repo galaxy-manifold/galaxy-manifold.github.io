@@ -4,8 +4,8 @@ This file is written by `python3 pipeline/export_web.py report`. It reads `pipel
 
 ## Result
 
-- The export has 657,057 galaxies. Each galaxy has 20 dimensions, 3 categories and 5 metadata columns.
-- The dimension files take 20.58 MB after gzip. All of `site/data` takes 28.92 MB, before the thumbnails and `literature.json` are added.
+- The export has 657,057 galaxies. Each galaxy has 22 dimensions, 3 categories and 5 metadata columns.
+- The dimension files take 22.57 MB after gzip. All of `site/data` takes 30.91 MB, before the thumbnails and `literature.json` are added.
 - The export uses the full sample. No subsample was needed (see "File sizes").
 - The round trip check passed. An independent decoder read every file back and compared it with `pipeline/cache/galaxies.parquet`.
 - `pipeline/cache/galaxies.parquet` has the same rows in the same order as `site/data`. The thumbnails step reads it.
@@ -90,8 +90,12 @@ ALFALFA. `log_fgas` comes from `mgs_parent`. It is log M_HI minus log M★ for A
 | `N2Ha` | -2.5 to 1 | 379,654 | 277,403 | 0 | S/N ≤ 3 in [NII] or Hα | mpajhu |
 | `O3Hb` | -1.5 to 1.5 | 213,140 | 443,917 | 0 | S/N ≤ 3 in [OIII] or Hβ | mpajhu |
 | `z` | 0 to 0.3 | 657,057 | 0 | 0 |  | sdss |
+| `AV` | -1 to 4 | 656,431 | 626 | 626 |  | mpajhu |
+| `HaHb` | 0.2 to 1.2 | 303,073 | 353,984 | 270 | S/N ≤ 3 in Hα or Hβ | mpajhu |
 
 The J95 aperture correction to R50/8 changes log σ by a median of 0.030 dex.
+
+Dust. A_V is 1.086 × TAUV_CONT from galSpecIndx, the V-band optical depth of the MPA-JHU fit to the fiber continuum. 45,532 galaxies have TAUV_CONT < 0. We keep these values, because they scatter around zero and cutting them would bias the low end. The Balmer decrement log Hα/Hβ uses the same fluxes and rescaled errors as the BPT ratios. 9,933 of the 303,343 galaxies with S/N > 3 in both lines fall below the Case B value of 2.86. We keep them too.
 
 ## Categories
 
@@ -114,8 +118,10 @@ Every Lim+17 group with one member has that galaxy as its central (0 exceptions)
 | `cats/bpt.u8.gz` | 0.221 |
 | `cats/env.u8.gz` | 0.171 |
 | `cats/morph.u8.gz` | 0.147 |
+| `dims/AV.u16.gz` | 1.210 |
 | `dims/C.u16.gz` | 1.235 |
 | `dims/D4000.u16.gz` | 1.247 |
+| `dims/HaHb.u16.gz` | 0.775 |
 | `dims/HdA.u16.gz` | 1.247 |
 | `dims/N2Ha.u16.gz` | 0.861 |
 | `dims/O3Hb.u16.gz` | 0.625 |
@@ -134,16 +140,16 @@ Every Lim+17 group with one member has that galaxy as its central (0 exceptions)
 | `dims/mu50.u16.gz` | 1.181 |
 | `dims/pEl.u16.gz` | 1.278 |
 | `dims/z.u16.gz` | 1.272 |
-| `manifest.json` | 0.028 |
+| `manifest.json` | 0.031 |
 | `meta/dec.f32.gz` | 2.400 |
 | `meta/fiber.u16.gz` | 0.963 |
 | `meta/mjd.u16.gz` | 1.041 |
 | `meta/plate.u16.gz` | 1.089 |
 | `meta/ra.f32.gz` | 2.278 |
-| dims total | 20.582 |
-| all of `site/data` from this step | 28.921 |
+| dims total | 22.566 |
+| all of `site/data` from this step | 30.908 |
 
-Section 16 asks for dimension files of about 20 MB or less. The full sample needs 20.58 MB, which is 3% over 20 MB. We kept the full sample instead of removing about 5% of the galaxies at random. The export subsamples only above 21 MB (`DIMS_GZ_TOLERANCE` in `config.py`). The dimension files use zlib level 9 with memLevel 9 and the Z_FILTERED strategy. This is a standard gzip stream, and it is about 1% smaller than the default settings. All gzip files have a zero timestamp, so a rebuild from the same inputs gives identical bytes.
+Section 16 asks for dimension files of about 24 MB or less. The full sample needs 22.57 MB, which is 6% under that, so we kept every galaxy. The export subsamples only above 25.2 MB (`DIMS_GZ_TOLERANCE` in `config.py`). The dimension files use zlib level 9 with memLevel 9 and the Z_FILTERED strategy. This is a standard gzip stream, and it is about 1% smaller than the default settings. All gzip files have a zero timestamp, so a rebuild from the same inputs gives identical bytes.
 
 ## Verification
 
@@ -170,6 +176,8 @@ dim logMh     n_valid  564,534 max|err| 4.19e-05 (step/2 4.2e-05) OK
 dim N2Ha      n_valid  379,654 max|err| 2.67e-05 (step/2 2.67e-05) OK
 dim O3Hb      n_valid  213,140 max|err| 2.29e-05 (step/2 2.29e-05) OK
 dim z         n_valid  657,057 max|err| 2.29e-06 (step/2 2.29e-06) OK
+dim AV        n_valid  656,431 max|err| 3.81e-05 (step/2 3.81e-05) OK
+dim HaHb      n_valid  303,073 max|err| 7.63e-06 (step/2 7.63e-06) OK
 cat bpt       codes {0: 0, 1: 150231, 2: 141160, 3: 40670, 4: 11071, 5: 9356, 6: 65672, 7: 238897} OK
 cat env       codes {0: 92523, 1: 338018, 2: 68297, 3: 158219, 4: 0, 5: 0, 6: 0, 7: 0} OK
 cat morph     codes {0: 23828, 1: 60035, 2: 184341, 3: 388853, 4: 0, 5: 0, 6: 0, 7: 0} OK
@@ -230,7 +238,7 @@ Quicklook. `pipeline/cache/quicklook.png` shows 12 density plots of the main rel
     - `ra` and `dec`, the DR17 photometric position. `ra_spec` and `dec_spec` are the MPA-JHU fiber position.
     - `z`, `petroR50_r` and `petroR90_r`. The radii are in arcsec.
     - `local_image`, the path of an existing 160 px cutout relative to the project root, or an empty string.
-    - The 20 dimension columns in physical units, with NaN when missing.
+    - The 22 dimension columns in physical units, with NaN when missing.
     - `bpt`, `env` and `morph` as uint8 codes, with 0 for missing.
     - Match details such as `lim_match`, `lim_io`, `lim_nmem`, `gz1_match` and `phot_query`.
 - The manifest has fields that section 5.2 does not list. These are `sample`, `caveats`, and the category fields other than `key`, `label` and `codes`. A category entry has the form `{key, label, file, dtype, missing, codes: [{code, label, name, color, n}], nmissing, desc, source}`.

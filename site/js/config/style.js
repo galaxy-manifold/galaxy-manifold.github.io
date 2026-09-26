@@ -26,6 +26,7 @@ export const GROUP_COLORS = {
   struct: COLORS.teal,
   kin: COLORS.coral,
   gas: '#8fd0e8',
+  dust: '#b98a5e',
   env: COLORS.plum,
   lines: COLORS.olive,
   obs: COLORS.cream3,

@@ -32,12 +32,14 @@ export const DIM_CONFIG = {
   N2Ha:     { cmap: 'ember',    reverse: false, tour: false, decimals: 2, range: [-1.0, 0.2] },
   O3Hb:     { cmap: 'sunset',   reverse: false, tour: false, decimals: 2, range: [-1.0, 0.9] },
   z:        { cmap: 'redshift', reverse: false, tour: false, decimals: 3, range: [0.02, 0.2] },
+  AV:       { cmap: 'ember',    reverse: false, tour: true,  decimals: 2, range: [0.0, 1.6] },
+  HaHb:     { cmap: 'ember',    reverse: false, tour: false, decimals: 3, range: [0.46, 0.8] },
 };
 
 /** Default grand-tour set (§14), in canonical order. */
 // Only near-complete dims (>=96% valid): during a tour every set member carries weight > 0.12,
 // so one sparse dim (e.g. OH, 22% valid) would fade most of the sample out (§10 fade rule).
-export const TOUR_DEFAULT = ['logM', 'logsSFR', 'D4000', 'logR50', 'C', 'mu50', 'pEl'];
+export const TOUR_DEFAULT = ['logM', 'logsSFR', 'D4000', 'logR50', 'C', 'mu50', 'pEl', 'AV'];
 
 /** Config for a dimension key, merged over DEFAULT_DIM. */
 export function dimConfig(key) {

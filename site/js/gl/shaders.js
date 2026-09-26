@@ -18,15 +18,16 @@ layout(location = 4) in vec4 a_d4;
 layout(location = 5) in vec4 a_d5;
 layout(location = 6) in uvec4 a_cats;
 layout(location = 7) in float a_sel;
+layout(location = 8) in vec4 a_d6;   // dims 24-27 (added after cats/sel took 6 and 7)
 
-uniform vec4 u_A[6];        // decode: u = A*val + B (val = normalized uint16)
-uniform vec4 u_B[6];
-uniform vec4 u_px[6];       // frame columns
-uniform vec4 u_py[6];
-uniform vec4 u_fade[6];     // per-dim missing fade factors
-uniform vec4 u_colW[6];     // one-hot of the color dimension
-uniform vec4 u_zW[6];       // one-hot of the range-filter dimension (z)
-uniform vec4 u_needW[6];    // one-hot of a dimension that must be present (needColor)
+uniform vec4 u_A[7];        // decode: u = A*val + B (val = normalized uint16)
+uniform vec4 u_B[7];
+uniform vec4 u_px[7];       // frame columns
+uniform vec4 u_py[7];
+uniform vec4 u_fade[7];     // per-dim missing fade factors
+uniform vec4 u_colW[7];     // one-hot of the color dimension
+uniform vec4 u_zW[7];       // one-hot of the range-filter dimension (z)
+uniform vec4 u_needW[7];    // one-hot of a dimension that must be present (needColor)
 uniform vec2 u_colRange;    // (lo, 1/(hi-lo)) in u-space (hi < lo reverses)
 uniform vec3 u_zRange;      // (lo, hi, active) in u-space
 uniform uvec4 u_catMask;    // visible-code bitmask per category slot
@@ -44,10 +45,10 @@ flat out uint v_code;
 const float MISS = 0.5 / 65535.0;
 
 void main() {
-  vec4 val[6] = vec4[6](a_d0, a_d1, a_d2, a_d3, a_d4, a_d5);
+  vec4 val[7] = vec4[7](a_d0, a_d1, a_d2, a_d3, a_d4, a_d5, a_d6);
   float X = 0.0, Y = 0.0, vis = 1.0;
   float cU = 0.0, cM = 0.0, zU = 0.0, zM = 0.0, nM = 0.0;
-  for (int k = 0; k < 6; k++) {
+  for (int k = 0; k < 7; k++) {
     vec4 v = val[k];
     vec4 m = vec4(lessThan(v, vec4(MISS)));
     vec4 u = (u_A[k] * v + u_B[k]) * (1.0 - m);

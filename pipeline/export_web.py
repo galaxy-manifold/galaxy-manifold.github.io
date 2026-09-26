@@ -47,12 +47,17 @@ def sig(x: float, digits: int = 6) -> float:
 
 def gz(data: bytes, filtered: bool = False) -> bytes:
     """gzip level 9, byte-stable (mtime 0). For the byte-shuffled dims, memLevel 9 with the
-    Z_FILTERED strategy is ~1% smaller than gzip's default and still a plain gzip stream."""
+    Z_FILTERED strategy is ~1% smaller than gzip's default and still a plain gzip stream.
+    The header's OS byte is pinned, because zlib writes a platform code there (0x13 on macOS)
+    and the files should not depend on the machine that built them. The values are the ones
+    the first (Linux) build wrote: 0x03 for the dims, 0xff for the rest."""
     if not filtered:
-        return gzip.compress(data, compresslevel=9, mtime=0)
-    c = zlib.compressobj(level=9, method=zlib.DEFLATED, wbits=31, memLevel=9,
-                         strategy=zlib.Z_FILTERED)
-    return c.compress(data) + c.flush()
+        out, os_byte = gzip.compress(data, compresslevel=9, mtime=0), b"\xff"
+    else:
+        c = zlib.compressobj(level=9, method=zlib.DEFLATED, wbits=31, memLevel=9,
+                             strategy=zlib.Z_FILTERED)
+        out, os_byte = c.compress(data) + c.flush(), b"\x03"
+    return out[:9] + os_byte + out[10:]
 
 
 # ---------------------------------------------------------------------------------------
@@ -117,6 +122,7 @@ def choose_rows(cat: pd.DataFrame, stats: dict) -> np.ndarray:
 
 def export() -> None:
     t0 = time.time()
+    assert len(C.DIMS) <= C.MAX_DIMS, f"{len(C.DIMS)} dims; the client draws at most {C.MAX_DIMS}"
     cat = pd.read_parquet(C.CATALOG_PARQUET)
     build_stats = json.loads(C.BUILD_STATS.read_text())
     stats: dict = {}
@@ -756,6 +762,7 @@ def report() -> None:
         "pEl": "no Galaxy Zoo 1 match",
         "N2Ha": "S/N ≤ 3 in [NII] or Hα",
         "O3Hb": "S/N ≤ 3 in [OIII] or Hβ",
+        "HaHb": "S/N ≤ 3 in Hα or Hβ",
     }
     w("| Key | Range | Valid | Missing | Out of range | Other reasons for missing | Source |")
     w("|---|---|---:|---:|---:|---|---|")
@@ -767,6 +774,14 @@ def report() -> None:
     w("")
     w(f"The J95 aperture correction to R50/8 changes log σ by a median of "
       f"{b['sigv']['median_correction_dex']:.3f} dex.\n")
+    du = b["dust"]
+    w(f"Dust. A_V is 1.086 × TAUV_CONT from galSpecIndx, the V-band optical depth of the "
+      f"MPA-JHU fit to the fiber continuum. {f(du['tauv_negative'])} galaxies have "
+      "TAUV_CONT < 0. We keep these values, because they scatter around zero and cutting "
+      "them would bias the low end. The Balmer decrement log Hα/Hβ uses the same "
+      "fluxes and rescaled errors as the BPT ratios. "
+      f"{f(du['balmer_below_case_b'])} of the {f(du['balmer_sn'])} galaxies with S/N > 3 in "
+      "both lines fall below the Case B value of 2.86. We keep them too.\n")
 
     w("## Categories\n")
     for c in man["categories"]:
@@ -800,14 +815,18 @@ def report() -> None:
     w(f"| dims total | {e['dims_gz_mb']:.3f} |")
     w(f"| all of `site/data` from this step | {e['total_mb']:.3f} |")
     w("")
-    w(f"Section 16 asks for dimension files of about 20 MB or less. The full sample needs "
-      f"{e['dims_gz_mb_full_sample']:.2f} MB, which is "
-      f"{100 * (e['dims_gz_mb_full_sample'] / C.DIMS_GZ_BUDGET_MB - 1):.0f}% over 20 MB. We "
-      "kept the full sample instead of removing about 5% of the galaxies at random. The "
-      f"export subsamples only above {C.DIMS_GZ_BUDGET_MB * C.DIMS_GZ_TOLERANCE:.0f} MB "
+    full, budget = e["dims_gz_mb_full_sample"], C.DIMS_GZ_BUDGET_MB
+    fit = (f"which is {100 * (1 - full / budget):.0f}% under that, so we kept every galaxy."
+           if full <= budget else
+           f"which is {100 * (full / budget - 1):.0f}% over that. We kept the full sample "
+           "instead of removing galaxies at random.")
+    w(f"Section 16 asks for dimension files of about {budget:g} MB or less. The full sample "
+      f"needs {full:.2f} MB, {fit} The "
+      f"export subsamples only above {budget * C.DIMS_GZ_TOLERANCE:.1f} MB "
       "(`DIMS_GZ_TOLERANCE` in `config.py`). The dimension files use zlib level 9 with "
       "memLevel 9 and the Z_FILTERED strategy. This is a standard gzip stream, and it is "
-      "about 1% smaller than the default settings. All gzip files have a zero timestamp, so "
+      "about 1% smaller than the default settings. All gzip files have a zero timestamp and a "
+      "fixed OS byte, so "
       "a rebuild from the same inputs gives identical bytes.\n")
 
     w("## Verification\n")
@@ -903,7 +922,7 @@ def report() -> None:
     w("    - `z`, `petroR50_r` and `petroR90_r`. The radii are in arcsec.")
     w("    - `local_image`, the path of an existing 160 px cutout relative to the project "
       "root, or an empty string.")
-    w("    - The 20 dimension columns in physical units, with NaN when missing.")
+    w(f"    - The {len(C.DIMS)} dimension columns in physical units, with NaN when missing.")
     w("    - `bpt`, `env` and `morph` as uint8 codes, with 0 for missing.")
     w("    - Match details such as `lim_match`, `lim_io`, `lim_nmem`, `gz1_match` and "
       "`phot_query`.")

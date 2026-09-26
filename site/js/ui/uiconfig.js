@@ -4,7 +4,7 @@
 import { groupColor } from '../config/style.js';
 
 /** Rail group order (DESIGN.md §3.1); unknown groups follow in manifest order. */
-export const GROUP_ORDER = ['stars', 'sf', 'chem', 'struct', 'kin', 'gas', 'env', 'lines', 'obs', 'learned'];
+export const GROUP_ORDER = ['stars', 'sf', 'chem', 'struct', 'kin', 'gas', 'dust', 'env', 'lines', 'obs', 'learned'];
 
 export const GROUP_NAMES = {
   stars: 'stellar populations',
@@ -13,6 +13,7 @@ export const GROUP_NAMES = {
   struct: 'structure',
   kin: 'kinematics',
   gas: 'cold gas',
+  dust: 'dust attenuation',
   env: 'environment',
   lines: 'emission lines',
   obs: 'observation',
@@ -46,7 +47,7 @@ export function chipFor(spec, code) {
 /** Color-cycle order for the `C` key (keys missing from the data are skipped). */
 export const COLOR_CYCLE = [
   'logSFR', 'logsSFR', 'D4000', 'gr', 'OH', 'OH_PP04', 'logM', 'logR50', 'C', 'logSigma', 'pEl',
-  'logSigV', 'HdA', 'logMh', 'logfHI', 'z', 'cat:bpt', 'cat:env', 'cat:morph', null,
+  'logSigV', 'HdA', 'logMh', 'logfHI', 'AV', 'HaHb', 'z', 'cat:bpt', 'cat:env', 'cat:morph', null,
 ];
 
 export function dimColor(d) {

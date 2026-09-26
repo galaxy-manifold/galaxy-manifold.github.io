@@ -81,8 +81,9 @@ def load_lim() -> pd.DataFrame:
 
 
 def load_index_errors() -> pd.DataFrame:
-    """D4000_N_ERR and LICK_HD_A_ERR from galSpecIndx (mgs_parent carries only the values).
-    A failed HdA measurement is stored as exactly 0 with error -1."""
+    """D4000_N_ERR and LICK_HD_A_ERR from galSpecIndx (mgs_parent carries only the values),
+    plus the continuum optical depth TAUV_CONT. A failed HdA measurement is stored as exactly
+    0 with error -1."""
     from astropy.io import fits
     with fits.open(C.GALSPEC_INDX, memmap=True) as h:
         d = h[1].data
@@ -91,7 +92,8 @@ def load_index_errors() -> pd.DataFrame:
             "mjd": np.asarray(d["MJD"]).astype(np.int64),
             "fiber": np.asarray(d["FIBERID"]).astype(np.int64),
             "d4000_n_err": np.asarray(d["D4000_N_ERR"]).astype(np.float64),
-            "hdelta_a_err": np.asarray(d["LICK_HD_A_ERR"]).astype(np.float64)})
+            "hdelta_a_err": np.asarray(d["LICK_HD_A_ERR"]).astype(np.float64),
+            "tauv_cont": np.asarray(d["TAUV_CONT"]).astype(np.float64)})
     return out.drop_duplicates(KEY)
 
 
@@ -338,6 +340,7 @@ def build() -> tuple[pd.DataFrame, dict]:
     ie = df[KEY].merge(load_index_errors(), on=KEY, how="left")
     df["d4000_n_err"] = ie["d4000_n_err"].to_numpy(float)
     df["hdelta_a_err"] = ie["hdelta_a_err"].to_numpy(float)
+    df["tauv_cont"] = ie["tauv_cont"].to_numpy(float)
     d4 = finite_or_nan(df["d4000_n"])
     hd = finite_or_nan(df["hdelta_a"])
     ok_d4 = df["d4000_n_err"].to_numpy(float) > 0
@@ -372,6 +375,16 @@ def build() -> tuple[pd.DataFrame, dict]:
     n2ha = log_ratio(f["nii"], f["ha"], ok_n2)
     o3hb = log_ratio(f["oiii"], f["hb"], ok_o3)
     D["N2Ha"], D["O3Hb"] = n2ha, o3hb
+
+    # dust: stellar continuum attenuation and the Balmer decrement (both 3" fiber)
+    tauv = finite_or_nan(df["tauv_cont"], lo=-1000)
+    D["AV"] = C.TAUV_TO_AV * tauv
+    ok_bd = (sn["ha"] > C.LINE_SNR_MIN) & (sn["hb"] > C.LINE_SNR_MIN)
+    D["HaHb"] = log_ratio(f["ha"], f["hb"], ok_bd)
+    stats["dust"] = {"tauv_finite": int(np.isfinite(tauv).sum()),
+                     "tauv_negative": int((tauv < 0).sum()),
+                     "balmer_sn": int(ok_bd.sum()),
+                     "balmer_below_case_b": int((D["HaHb"] < np.log10(2.86)).sum())}
 
     # PP04 O3N2 for MPA BPT-SF galaxies with S/N>3 (rescaled) in all four lines
     bptc = df["bptclass"].to_numpy(float)
@@ -488,6 +501,17 @@ def build() -> tuple[pd.DataFrame, dict]:
 
     # local 160 px cutouts (exact filenames; a set from os.listdir, not a stat per file)
     import os
+    if not C.IMAGES_SDSS.exists() and not C.IMAGES_EXTRA.exists() and C.CATALOG_PARQUET.exists():
+        # this machine has no cutouts: keep the previous build's paths rather than erase them
+        prev = pd.read_parquet(C.CATALOG_PARQUET, columns=["objid", "local_image"])
+        df["local_image"] = (df[["objid"]].merge(prev.drop_duplicates("objid"), on="objid",
+                                                 how="left")["local_image"].fillna("").to_numpy())
+        prev_stats = (json.loads(C.BUILD_STATS.read_text()).get("local_images", {})
+                      if C.BUILD_STATS.exists() else {})
+        stats["local_images"] = {**prev_stats, "carried_over_from_previous_build": True}
+        log(f"  no image directories here: carried over {(df['local_image'] != '').sum():,} "
+            "local_image paths from the previous catalog")
+        return _finish(df, stats, t0)
     sdss_files = set(os.listdir(C.IMAGES_SDSS)) if C.IMAGES_SDSS.exists() else set()
     extra_files = set(os.listdir(C.IMAGES_EXTRA)) if C.IMAGES_EXTRA.exists() else set()
     f_sdss = df["objid"].astype(str) + ".jpg"
@@ -503,12 +527,16 @@ def build() -> tuple[pd.DataFrame, dict]:
                              "matched_sdss": int(in_sdss.sum()),
                              "matched_extra_only": int((in_extra & ~in_sdss).sum()),
                              "total": int((in_sdss | in_extra).sum())}
+
+    return _finish(df, stats, t0)
+
+
+def _finish(df: pd.DataFrame, stats: dict, t0: float) -> tuple[pd.DataFrame, dict]:
     # image_id cross-check: the core sample's objID must equal the DR17 objID
     core = df["in_core"].to_numpy(bool)
     stats["core_objid_agrees"] = {
         "core": int(core.sum()),
         "image_id_equals_dr17_objid": int((df["image_id"].astype(str) == df["objid"]).to_numpy()[core].sum())}
-
     stats["elapsed_s"] = round(time.time() - t0, 1)
     return df, stats
 
@@ -523,6 +551,7 @@ def main() -> None:
              "extinction_u", "extinction_g", "extinction_i", "extinction_z",
              "deVAB_r", "expAB_r", "fracDeV_r", "kpc_per_arcsec",
              "v_disp", "v_disp_err", "sn_median", "bptclass", "d4000_n_err", "hdelta_a_err",
+             "tauv_cont",
              "lim_color_placeholder",
              "log_mstar", "log_sfr", "log_ssfr", "oh", "log_mhi", "log_fgas", "hi_w50", "agc",
              "gz1_match", "gz1_nvote", "gz1_p_el_debiased", "gz1_p_cs_debiased", "gz1_elliptical",

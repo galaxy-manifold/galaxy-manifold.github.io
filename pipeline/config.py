@@ -20,12 +20,17 @@ SKYSERVER_CACHE = CACHE / "skyserver"
 SITE = ROOT / "site"
 SITE_DATA = SITE / "data"
 
-# read-only inputs (symlinks into ../sdss-predict-everything and /home/john/Dropbox/data)
+# read-only inputs (symlinks into ../sdss-predict-everything, and ~/Dropbox/data, which is
+# /home/john/Dropbox/data on Linux and /Users/john/Dropbox/data on macOS)
+DROPBOX_DATA = Path.home() / "Dropbox" / "data"
 PARENT = ROOT / "catalog" / "mgs_parent.parquet"
 IMAGES_SDSS = ROOT / "data" / "images-sdss"      # <objID>.jpg, 160 px, 0.262"/px
 IMAGES_EXTRA = ROOT / "data" / "images-extra"    # p<plate>-<mjd>-<fiber>.jpg
-GALSPEC_INDX = ROOT / "data" / "galSpecIndx-dr8.fits"   # only for the D4000/HdA errors
-LIM_DIR = Path("/home/john/Dropbox/data/xSAGA/lim+2017/catalogs")
+# D4000/HdA errors and TAUV_CONT; the same DR8 file lives in both places
+GALSPEC_INDX = next((p for p in (ROOT / "data" / "galSpecIndx-dr8.fits",
+                                 DROPBOX_DATA / "sdss-mpajhu" / "galSpecIndx-dr8.fits")
+                     if p.exists()), ROOT / "data" / "galSpecIndx-dr8.fits")
+LIM_DIR = DROPBOX_DATA / "xSAGA" / "lim+2017" / "catalogs"
 LIM_GALAXY = LIM_DIR / "SDSS(M) galaxy.dat"
 LIM_GROUP = LIM_DIR / "SDSS(M) group.dat"
 
@@ -66,6 +71,8 @@ LIM_COLOR_PLACEHOLDER_TOL = 0.2
 # mgs_parent carries the raw galSpecLine FLUX_ERR values.
 LINE_ERR_SCALE = {"hb": 1.882, "oiii": 1.566, "ha": 2.473, "nii": 2.039}
 LINE_SNR_MIN = 3.0
+# A_V = 2.5 log10(e) tau_V for the MPA-JHU continuum-fit optical depth TAUV_CONT
+TAUV_TO_AV = 1.0857
 
 # PP04 O3N2 (Pettini & Pagel 2004): 12+log(O/H) = 8.73 - 0.32 O3N2, valid for -1 < O3N2 < 1.9
 PP04_A, PP04_B = 8.73, -0.32
@@ -77,9 +84,10 @@ J95_EXP = 0.04
 FIBER_RADIUS_ARCSEC = 1.5
 SIGV_MIN, SIGV_MAX, SIGV_MAXFRACERR = 40.0, 500.0, 0.3
 
-# section 16 size budget: "dims (gz) around 20 MB or less". Subsample only when the full
-# sample overshoots by more than 5%; then subsample to the budget itself.
-DIMS_GZ_BUDGET_MB = 20.0
+# section 16 size budget: "dims (gz) around 24 MB or less" (raised from 20 MB when the dust
+# dims were added). Subsample only when the full sample overshoots by more than 5%; then
+# subsample to the budget itself.
+DIMS_GZ_BUDGET_MB = 24.0
 DIMS_GZ_TOLERANCE = 1.05
 SITE_DATA_BUDGET_MB = 90.0
 
@@ -222,9 +230,18 @@ DIMS = [
     dict(key="z", label="z", short="z", unit="", group="obs", min=0.0, max=0.3,
          source="sdss",
          desc="Spectroscopic redshift (heliocentric), SDSS / MPA-JHU"),
+    # appended after z (not grouped by position) so frames in old share links stay valid
+    dict(key="AV", label="A_V", short="A_V", unit="mag", group="dust", min=-1.0, max=4.0,
+         source="mpajhu",
+         desc="Stellar V-band attenuation 1.086 × TAUV_CONT, MPA-JHU fit to the 3″ fiber "
+              "continuum; values below 0 are fit noise and are kept"),
+    dict(key="HaHb", label="log Hα/Hβ", short="Hα/Hβ", unit="", group="dust", min=0.2,
+         max=1.2, source="mpajhu",
+         desc="Balmer decrement log Hα/Hβ, MPA-JHU fiber fluxes, S/N>3 in both (rescaled "
+              "errors); 0.456 is Case B with no dust"),
 ]
 DIM_KEYS = [d["key"] for d in DIMS]
-MAX_DIMS = 24   # the client supports up to 6 x vec4
+MAX_DIMS = 28   # the client supports up to 7 x vec4
 
 # ---------------------------------------------------------------------------------------
 # categories: DESIGN.md section 7 (uint8 codes, 0 = missing)

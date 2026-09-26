@@ -73,7 +73,7 @@ Avoid neon, glassmorphism, and generic dashboards.
 
 Dimension **group colors** (tokens, compass spokes):
 `stars`→orange, `sf`→sky, `chem`→mustard, `struct`→teal, `kin`→coral, `gas`→`#8fd0e8`,
-`env`→plum, `lines`→olive, `obs`→cream-3, `learned`→cream (reserved for future embeddings).
+`dust`→`#b98a5e`, `env`→plum, `lines`→olive, `obs`→cream-3, `learned`→cream (reserved for future embeddings).
 
 ### 3.2 Typography (Google Fonts)
 
@@ -257,12 +257,17 @@ Standardized coordinate: **u = (x − center) / scale**. All projection math hap
 | 17 | `N2Ha` | log [NII]/Hα | N2 | | lines | [NII]6584/Hα, S/N>3 in both | −2.5–1.0 |
 | 18 | `O3Hb` | log [OIII]/Hβ | O3 | | lines | [OIII]5007/Hβ, S/N>3 in both | −1.5–1.5 |
 | 19 | `z` | z | z | | obs | spectroscopic redshift | 0.0–0.3 |
+| 20 | `AV` | A_V | A_V | mag | dust | `1.086 × TAUV_CONT` (galSpecIndx), stellar V-band attenuation from the MPA-JHU fit to the fiber continuum. Negative values are kept | −1.0–4.0 |
+| 21 | `HaHb` | log Hα/Hβ | Hα/Hβ | | dust | Balmer decrement log Hα/Hβ, S/N>3 in both (rescaled errors) | 0.2–1.2 |
 
 Notes:
 - Line S/N uses the MPA-JHU recommended error rescalings. Check
   `../sdss-predict-everything/src/build_catalog.py` / `sr_parent.py` for how that project
   treated line errors, and follow the MPA-JHU DR7/DR8 documentation.
-- The code must handle up to **24 dims** (6 × vec4) without changes, so future learned
+- New dims are appended to the end of the manifest, never inserted, so a frame in an older
+  share link can be padded with zero weights (§13.9). The rail orders dims by group, not by
+  manifest position.
+- The code must handle up to **28 dims** (7 × vec4) without changes, so future learned
   embeddings (group `learned`) can be appended to the manifest.
 
 ## 7. Categories
@@ -378,15 +383,16 @@ morph → 1 `#de5b52`, 2 `#6fa8dc`, 3 `#7a7465`.
 
 WebGL2 only. Show a graceful full-screen message if WebGL2 is unavailable.
 
-- **Attributes:** `a_d0..a_d5` (vec4 from `UNSIGNED_SHORT`, normalized). Pack dims 4 per
+- **Attributes:** `a_d0..a_d6` (vec4 from `UNSIGNED_SHORT`, normalized; `a_d6` is at
+  location 8, after `a_cats` and `a_sel` at 6 and 7). Pack dims 4 per
   attribute and pad unused slots with 0, which reads as missing. Add `a_cats` (uvec4 from
   `UNSIGNED_BYTE`: bpt, env, morph, spare, via `vertexAttribIPointer`) and `a_sel` (u8
   selection flag).
 - **Decode in the shader:** missing if `val < 0.5/65535`. Otherwise `u = A_d·val + B_d` with
   `A_d = 65535(max−min)/(65534·scale)` and `B_d = (min − (max−min)/65534 − center)/scale`.
   Pass these as uniform vec4 arrays.
-- **Uniforms:** frame columns (6×vec4 each), per-dim missing-fade factors, color one-hot
-  (6×vec4) + normalization range, z-filter range, required-dim one-hot (6×vec4), category
+- **Uniforms:** frame columns (7×vec4 each), per-dim missing-fade factors, color one-hot
+  (7×vec4) + normalization range, z-filter range, required-dim one-hot (7×vec4), category
   bitmasks, camera, point size, gain,
   selection-active flag.
 - **Pass 1 (accumulate)** into an offscreen float FBO: RGBA32F when `EXT_color_buffer_float`
@@ -641,7 +647,7 @@ The literature ids are indicative. The literature agent fixes the final ids, and
 reference ids that exist, or the UI simply ignores missing ones. The initial view on first
 load is an animated arrival into **SFMS** from a random frame.
 
-Default tour set: `logM, logsSFR, OH, logR50, C, gr, D4000, logSigV, logMh`.
+Default tour set: `logM, logsSFR, D4000, logR50, C, mu50, pEl, AV` (dims at least 96% valid; see `site/js/config/dims.js`).
 
 ## 15. Overlays (overlays agent)
 
@@ -677,7 +683,7 @@ Default tour set: `logM, logsSFR, OH, logR50, C, gr, D4000, logSigV, logMh`.
 - The first paint should come within about 3 s on broadband. Show loading progress on the
   splash. Meta columns (ra, dec, plate, mjd, fiber) load after the first paint.
 - Support recent Chrome, Edge, Firefox and Safari. WebGL2 is required.
-- Keep `site/data` under about 90 MB total, with dims (gz) around 20 MB or less. If the full
+- Keep `site/data` under about 90 MB total, with dims (gz) around 24 MB or less. If the full
   sample exceeds that, the export may subsample randomly, keeping all H I detections, and must
   report what it did.
 
@@ -754,3 +760,6 @@ Default tour set: `logM, logsSFR, OH, logR50, C, gr, D4000, logSigV, logMh`.
 - 2026-09-24 · overlays · §12 API, additive: `app.overlays` (ruler drop zones, `highlightAxis`, `dropDim`, handles to the literature, trends, lasso and mosaic, `stats()`) and a `pursuit` event {phase, result}. See the header of `site/js/view/overlays/index.js`.
 - 2026-09-25 · ui · §13.4 and §12.2, additive: `filters.needColor` hides galaxies without a value of the color variable (the color dim missing, or category code 0). It follows the color as it changes, so switching from O/H to log M★ shows everyone again. It is set by a funnel beside the legend, the `V` key and the `cv=1` URL key, and Reset clears it. While it is on with a category color, the legend hides the ∅ chip. `filterParams()` gains `need` (the required dim index), which the shader, the projection kernel, the prefix sample and the literature fitOffset all apply.
 - 2026-09-25 · core · §14: the default preset (first-load arrival, Reset with no preset, and URL restore without a view) is now `sfms` instead of `mzr`.
+- 2026-09-25 · data · Two dims in a new `dust` group, appended after `z` so old share links still decode: `AV` (1.086 × TAUV_CONT from galSpecIndx; 45,532 galaxies with TAUV_CONT < 0 are kept, since they scatter about zero) and `HaHb` (log Hα/Hβ, S/N>3 in both with the rescaled errors; 303,073 valid). The dim limit rises to 28 (7 × vec4) and the §16 dims budget to 24 MB. The export is 22.57 MB of dims with the full sample. The gzip OS byte is now fixed (0x03 for dims, 0xff for the rest), because macOS zlib writes 0x13 and a rebuild there changed every file's header. Input paths use `~/Dropbox/data`, so the pipeline runs on the Mac as well as on Linux. When the image cutout folders are missing, `build_catalog.py` reuses the previous build's `local_image` paths.
+- 2026-09-25 · ui · §13.9: `decodeFrame` accepts a frame with fewer dims than the data and pads it with zero weights, so links made before a dim was appended keep their view.
+- 2026-09-25 · ui · §14 default tour set gains `AV` (99.9% valid), giving `logM, logsSFR, D4000, logR50, C, mu50, pEl, AV`. The §14 list is updated to the set the code has used since launch. Links that carry `ts` keep their own set.

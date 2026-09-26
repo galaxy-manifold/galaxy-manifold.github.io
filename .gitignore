@@ -13,5 +13,5 @@ site/tests/screens/
 node_modules/
 .DS_Store
 
-# packaged Artifact build (tools/build_artifact.py)
+# old Artifact build output (the build script is retired; the site is live on Pages)
 dist/

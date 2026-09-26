@@ -32,6 +32,7 @@
   --g-struct: var(--teal);
   --g-kin: var(--coral);
   --g-gas: #8fd0e8;
+  --g-dust: #b98a5e;
   --g-env: var(--plum);
   --g-lines: var(--olive);
   --g-obs: var(--cream-3);
