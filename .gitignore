@@ -5,6 +5,7 @@
 # pipeline intermediates (SkyServer pulls, merged catalogs, fetched cutouts, quicklooks)
 pipeline/cache/
 __pycache__/
+.venv/
 *.pyc
 
 # dev-only synthetic dataset and test output

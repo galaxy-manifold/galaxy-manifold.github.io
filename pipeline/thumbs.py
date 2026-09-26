@@ -127,7 +127,10 @@ def log(msg: str) -> None:
 
 
 def gz(data: bytes) -> bytes:
-    return gzip.compress(data, compresslevel=9, mtime=0)
+    """gzip level 9, byte-stable: mtime 0 and the header's OS byte pinned to 0xff, which
+    Python 3.11 and 3.12 otherwise take from zlib (0x03 Linux, 0x13 macOS). See export_web.gz."""
+    out = gzip.compress(data, compresslevel=9, mtime=0)
+    return out[:9] + b"\xff" + out[10:]
 
 
 def read_json(path: Path, default):

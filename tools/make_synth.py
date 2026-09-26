@@ -260,7 +260,8 @@ def generate(n: int, rng: np.random.Generator):
 # ---------------------------------------------------------------------------------------
 
 def gz(b: bytes) -> bytes:
-    return gzip.compress(b, compresslevel=9, mtime=0)
+    out = gzip.compress(b, compresslevel=9, mtime=0)
+    return out[:9] + b"\xff" + out[10:]   # OS byte pinned, as in pipeline/export_web.gz
 
 
 def quantize(x, lo, hi):

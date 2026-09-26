@@ -46,15 +46,17 @@ Then open http://localhost:8000. The page needs a web server because browsers bl
 
 ## Rebuild the data
 
-The pipeline reads local catalogs through the `catalog` and `data` links in the project root, which point into `../sdss-predict-everything`. It also reads the Lim et al. (2017) files from `/home/john/Dropbox/data/xSAGA/lim+2017/catalogs/`.
+The pipeline reads local catalogs through the `catalog` and `data` links in the project root, which point into `../sdss-predict-everything`. It also reads the Lim et al. (2017) files from `~/Dropbox/data/xSAGA/lim+2017/catalogs/`.
+
+The Python environment is managed with [uv](https://docs.astral.sh/uv/). `pyproject.toml` and `uv.lock` pin Python 3.12 and the package versions, so Linux and macOS builds use the same code. `uv run` creates `.venv` on first use. This folder syncs through Dropbox, so after the first run mark `.venv` as ignored, or the Linux and macOS environments will overwrite each other: `xattr -w com.dropbox.ignored 1 .venv` on macOS, `attr -s com.dropbox.ignored -V 1 .venv` on Linux.
 
 ```
-python3 pipeline/fetch_skyserver.py    # SkyServer queries, cached; rerun until it prints COMPLETE
-python3 pipeline/build_catalog.py      # merge the catalogs and compute the properties
-python3 pipeline/export_web.py all     # write site/data, check it, and write REPORT.md
-python3 pipeline/thumbs.py all         # choose the 15,994 galaxies with images and make thumbnails
-python3 pipeline/literature.py         # rebuild site/data/literature.json from cached sources
-node --test site/tests/                # unit tests for the projection math and overlays
+uv run pipeline/fetch_skyserver.py   # SkyServer queries, cached; rerun until it prints COMPLETE
+uv run pipeline/build_catalog.py     # merge the catalogs and compute the properties
+uv run pipeline/export_web.py all    # write site/data, check it, and write REPORT.md
+uv run pipeline/thumbs.py all        # choose the 15,994 galaxies with images and make thumbnails
+uv run pipeline/literature.py        # rebuild site/data/literature.json from cached sources
+node --test site/tests/              # unit tests for the projection math and overlays
 ```
 
 Every download is cached in `pipeline/cache/`, so a second run sends no requests.

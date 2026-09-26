@@ -149,7 +149,7 @@ Every Lim+17 group with one member has that galaxy as its central (0 exceptions)
 | dims total | 22.566 |
 | all of `site/data` from this step | 30.908 |
 
-Section 16 asks for dimension files of about 24 MB or less. The full sample needs 22.57 MB, which is 6% under that, so we kept every galaxy. The export subsamples only above 25.2 MB (`DIMS_GZ_TOLERANCE` in `config.py`). The dimension files use zlib level 9 with memLevel 9 and the Z_FILTERED strategy. This is a standard gzip stream, and it is about 1% smaller than the default settings. All gzip files have a zero timestamp, so a rebuild from the same inputs gives identical bytes.
+Section 16 asks for dimension files of about 24 MB or less. The full sample needs 22.57 MB, which is 6% under that, so we kept every galaxy. The export subsamples only above 25.2 MB (`DIMS_GZ_TOLERANCE` in `config.py`). The dimension files use zlib level 9 with memLevel 9 and the Z_FILTERED strategy. This is a standard gzip stream, and it is about 1% smaller than the default settings. All gzip files have a zero timestamp and a fixed OS byte, so a rebuild from the same inputs gives identical bytes.
 
 ## Verification
 

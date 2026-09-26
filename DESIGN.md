@@ -647,7 +647,7 @@ The literature ids are indicative. The literature agent fixes the final ids, and
 reference ids that exist, or the UI simply ignores missing ones. The initial view on first
 load is an animated arrival into **SFMS** from a random frame.
 
-Default tour set: `logM, logsSFR, D4000, logR50, C, mu50, pEl, AV` (dims at least 96% valid; see `site/js/config/dims.js`).
+Default tour set: `logM, logsSFR, D4000, logR50, C, mu50, pEl` (dims at least 96% valid; see `site/js/config/dims.js`).
 
 ## 15. Overlays (overlays agent)
 
@@ -763,3 +763,4 @@ Default tour set: `logM, logsSFR, D4000, logR50, C, mu50, pEl, AV` (dims at leas
 - 2026-09-25 · data · Two dims in a new `dust` group, appended after `z` so old share links still decode: `AV` (1.086 × TAUV_CONT from galSpecIndx; 45,532 galaxies with TAUV_CONT < 0 are kept, since they scatter about zero) and `HaHb` (log Hα/Hβ, S/N>3 in both with the rescaled errors; 303,073 valid). The dim limit rises to 28 (7 × vec4) and the §16 dims budget to 24 MB. The export is 22.57 MB of dims with the full sample. The gzip OS byte is now fixed (0x03 for dims, 0xff for the rest), because macOS zlib writes 0x13 and a rebuild there changed every file's header. Input paths use `~/Dropbox/data`, so the pipeline runs on the Mac as well as on Linux. When the image cutout folders are missing, `build_catalog.py` reuses the previous build's `local_image` paths.
 - 2026-09-25 · ui · §13.9: `decodeFrame` accepts a frame with fewer dims than the data and pads it with zero weights, so links made before a dim was appended keep their view.
 - 2026-09-25 · ui · §14 default tour set gains `AV` (99.9% valid), giving `logM, logsSFR, D4000, logR50, C, mu50, pEl, AV`. The §14 list is updated to the set the code has used since launch. Links that carry `ts` keep their own set.
+- 2026-09-26 · ui · §14 default tour set drops `AV` again: `logM, logsSFR, D4000, logR50, C, mu50, pEl`. Links that carry `ts` keep their own set.

@@ -41,6 +41,34 @@ export function initPresets(app, mount, ui) {
   });
   mount.append(tray);
 
+  // Touch taps select the cartridge under pointerdown, and the click that follows is dropped.
+  // iOS Safari routes that click to the wrong cartridge (the next one to the right) after the
+  // tray has been scrolled by scrollTo below, while pointer events still hit the right one.
+  // A press held long enough for the tooltip (tooltip.js) selects nothing, as before.
+  let tap = null, dropClickUntil = 0;
+  tray.addEventListener('pointerdown', (e) => {
+    const b = e.pointerType === 'touch' && e.isPrimary && e.target.closest('.cart');
+    tap = b ? { b, x: e.clientX, y: e.clientY, t: performance.now() } : null;
+  });
+  tray.addEventListener('pointermove', (e) => {
+    if (tap && Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > 10) tap = null;
+  });
+  tray.addEventListener('pointercancel', () => { tap = null; });
+  tray.addEventListener('pointerup', (e) => {
+    if (!tap || e.pointerType !== 'touch') return;
+    const { b, t } = tap;
+    tap = null;
+    dropClickUntil = performance.now() + 700;
+    if (performance.now() - t < 520) app.actions.applyPreset(b.dataset.id);
+  });
+  tray.addEventListener('click', (e) => {
+    if (performance.now() < dropClickUntil) {
+      dropClickUntil = 0;
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+
   // ------------------------------------------------------------------ rich hover card
   let version = 0;   // bumps when previews must be regenerated (filters, context restore)
   function literatureLabels(p) {
