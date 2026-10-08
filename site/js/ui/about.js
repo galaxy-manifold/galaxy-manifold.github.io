@@ -74,7 +74,10 @@ export function initAbout(app, ui) {
     const close = h('button', { class: 'ibtn ab-close', type: 'button', 'aria-label': 'Close', html: icon('close') });
     close.addEventListener('click', hide);
 
-    const lede = `Galaxy scaling relations as rotating two-dimensional projections of a ${data.D}-dimensional manifold of ${fmtInt(data.n)} ${m.title ? m.title.replace(/^SDSS /, 'SDSS ') : 'SDSS'} galaxies.`;
+    const lede = h('p', { class: 'ab-lede' },
+      'Galaxy scaling relations of the SDSS Main Galaxy Sample as rotating two-dimensional projections of a high-dimensional manifold. Read the ',
+      h('a', { href: 'https://jwuphysics.github.io/blog/2026-10-01/galaxy-manifold/', target: '_blank', rel: 'noopener noreferrer', text: 'blog post' }),
+      ' for more information.');
 
     // data credits
     const sources = h('ul', { class: 'ab-list ab-sources' },
@@ -133,7 +136,7 @@ export function initAbout(app, ui) {
     const panel = h('div', { class: 'ab-panel', role: 'document' },
       h('header', { class: 'ab-head' },
         h('div', { class: 'ab-brand', html: `${starburstMark('ab-mark')}<span>GALAXY MANIFOLD</span>` }), close),
-      h('p', { class: 'ab-lede', text: lede }),
+      lede,
       sec('Data', sources),
       h('div', { class: 'ab-grid' },
         h('div', { class: 'ab-col' }, sec('Keys', keys)),
