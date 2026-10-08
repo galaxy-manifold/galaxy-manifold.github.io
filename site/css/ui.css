@@ -1331,6 +1331,8 @@ html.dragging, html.dragging * { cursor: grabbing !important; }
 .ab-brand { display: flex; align-items: center; gap: 13px; font: 400 13px/1 var(--font-display); letter-spacing: 0.3em; color: var(--cream); }
 .ab-mark { width: 34px; height: 34px; }
 .ab-lede { max-width: 62ch; margin: 16px 0 26px; font: 300 18px/1.45 var(--font-ui); color: var(--cream); }
+.ab-lede a { color: var(--cream); text-decoration: none; border-bottom: 1px solid var(--hair-25); transition: color var(--t-ui), border-color var(--t-ui); }
+.ab-lede a:hover { color: var(--orange); border-color: var(--orange); }
 .ab-grid { display: grid; grid-template-columns: 0.9fr 1.2fr 1fr; gap: 30px; margin-top: 28px; }
 /* long lists flow in balanced columns */
 .ab-sources, .ab-lit { column-count: 3; column-gap: 30px; }
