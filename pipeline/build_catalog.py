@@ -30,6 +30,7 @@ from scipy.spatial import cKDTree
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import config as C  # noqa: E402
+import sfnet  # noqa: E402
 
 KEY = ["plate", "mjd", "fiber"]
 ARCSEC = np.pi / 648000.0
@@ -133,6 +134,7 @@ def build() -> tuple[pd.DataFrame, dict]:
     stats: dict = {"created": C.CREATED}
     t0 = time.time()
     par = pd.read_parquet(C.PARENT)
+    parent_keys = par[KEY].copy()
     stats["parent"] = int(len(par))
     log(f"parent: {len(par):,} galaxies ({C.PARENT.name})")
 
@@ -431,6 +433,31 @@ def build() -> tuple[pd.DataFrame, dict]:
     D["logfHI"] = finite_or_nan(df["log_fgas"])
     D["logMh"] = finite_or_nan(df["lim_logMh_h"]) - np.log10(C.H_LITTLE)
     D["z"] = z.copy()
+
+    # Wu (2025) SFNet feature activations, validation-set galaxies only, by objID (the
+    # features come from the image, so a repeat spectrum of the same object still matches)
+    sf, sf_stats, sf_valid = sfnet.load()
+    sf_checks = sfnet.check(sf, sf_stats, sf_valid)
+    if not sf_checks["ok"]:
+        raise RuntimeError(f"SFNet checks failed: {sf_checks}")
+    m = df[["objid"]].merge(sf, on="objid", how="left", validate="many_to_one")
+    for k in C.SFNET_FEATURES:
+        D[k] = m[k].to_numpy(float)
+    has_sf = m[next(iter(C.SFNET_FEATURES))].notna().to_numpy()
+    lost = ~sf["objid"].isin(set(df["objid"])).to_numpy()
+    # where the unmatched ones went: their spectrum (plate, mjd, fiber from the DR8 specObjID)
+    # is in the parent sample or not
+    so = sf_valid["specObjID"].astype(np.uint64).to_numpy()[lost]
+    lost_keys = pd.DataFrame({"plate": (so >> np.uint64(50)).astype(np.int64),
+                              "mjd": ((so >> np.uint64(24)) & np.uint64(0x3FFF)).astype(np.int64)
+                              + 50000,
+                              "fiber": ((so >> np.uint64(38)) & np.uint64(0xFFF)).astype(np.int64)})
+    in_parent = int(len(lost_keys.merge(parent_keys, on=KEY)))
+    stats["sfnet"] = {**sf_stats, "checks": sf_checks,
+                      "matched": int(has_sf.sum()), "unmatched": int(lost.sum()),
+                      "unmatched_not_in_parent": int(lost.sum()) - in_parent,
+                      "unmatched_cut_from_parent": in_parent}
+    log(f"  SFNet: {has_sf.sum():,} of {len(sf):,} validation galaxies matched by objID")
 
     # range cuts
     dim_stats = {}

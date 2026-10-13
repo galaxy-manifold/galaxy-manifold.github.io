@@ -77,13 +77,17 @@ def shuffle_u16(v: np.ndarray) -> bytes:
     return (v & 0xFF).astype(np.uint8).tobytes() + (v >> 8).astype(np.uint8).tobytes()
 
 
-def dim_stats(x: np.ndarray) -> dict:
+def dim_stats(x: np.ndarray, method: str = "mad") -> dict:
+    """center = median; scale = 1.4826 MAD (std when the MAD is ~0, or when the dimension asks
+    for scale="std" because it is zero-inflated, like the SFNet activations)."""
     v = x[np.isfinite(x)]
     center = float(np.median(v))
     mad = float(np.median(np.abs(v - center)))
     scale = 1.4826 * mad
     fallback = False
-    if not np.isfinite(scale) or scale < 1e-9 * max(1.0, abs(center)):
+    if method == "std":
+        scale = float(np.std(v))
+    elif not np.isfinite(scale) or scale < 1e-9 * max(1.0, abs(center)):
         scale, fallback = float(np.std(v)), True
     qs = np.quantile(v, np.linspace(0.0, 1.0, 101))
     return {"center": sig(center), "scale": sig(scale), "nvalid": int(v.size),
@@ -151,7 +155,7 @@ def export() -> None:
         rel = f"dims/{d['key']}.u16.gz"
         write(rel, gz(shuffle_u16(v), filtered=True))
         valid = x[v > 0]
-        st = dim_stats(valid)
+        st = dim_stats(valid, d.get("scale", "mad"))
         spec = {"key": d["key"], "label": d["label"], "short": d["short"], "unit": d["unit"],
                 "group": d["group"], "file": rel, "min": d["min"], "max": d["max"],
                 "center": st["center"], "scale": st["scale"], "nvalid": st["nvalid"],
@@ -763,6 +767,7 @@ def report() -> None:
         "N2Ha": "S/N ≤ 3 in [NII] or Hα",
         "O3Hb": "S/N ≤ 3 in [OIII] or Hβ",
         "HaHb": "S/N ≤ 3 in Hα or Hβ",
+        **{k: "not in the SFNet validation set" for k in C.SFNET_FEATURES},
     }
     w("| Key | Range | Valid | Missing | Out of range | Other reasons for missing | Source |")
     w("|---|---|---:|---:|---:|---|---|")
@@ -782,6 +787,35 @@ def report() -> None:
       "fluxes and rescaled errors as the BPT ratios. "
       f"{f(du['balmer_below_case_b'])} of the {f(du['balmer_sn'])} galaxies with S/N > 3 in "
       "both lines fall below the Case B value of 2.86. We keep them too.\n")
+    sf = b["sfnet"]
+    on = ", ".join(f"SL {v['index']} {100 * v['f_active']:.1f}%" for v in sf["features"].values())
+    w("SFNet. The `learned` dimensions are feature activations from the sparse feature "
+      "network (SFNet) of Wu (2025, ApJ, 980, 183). This network is a ResNet18 with a top-k "
+      "layer (k = 4) before its last linear layer. It was trained to predict the [NII], Hα, "
+      "[OIII] and Hβ fluxes from gri image cutouts. We use the four features in Table 1 of "
+      "the paper. Each value is the activation divided by its largest value in the "
+      "validation set, which is the 0 to 1 scale of the paper. A value of 0 means that the "
+      "feature is off.\n")
+    f17 = sf["checks"].get("feature17_catalog")
+    f17_txt = (f"The split also matches the feature 17 catalog of the sparse-feature-networks "
+               f"project for all {f(f17['matched'])} galaxies in it. " if f17 else "")
+    w(f"Only the {f(sf['validation'])} validation galaxies of the paper's "
+      f"{f(sf['paper_sample'])} galaxies have activations. `pipeline/sfnet.py` rebuilds the "
+      "paper's random split (fastai RandomSplitter with seed 256). The fraction of "
+      f"validation galaxies where each feature is on is {on}. These fractions match "
+      f"Table 1. {f17_txt}The published network weights do not reproduce the saved "
+      "activations, so we did not compute activations for the training galaxies.\n")
+    w(f"We match the validation galaxies to our sample by objID. {f(sf['matched'])} of them "
+      f"are in our sample. Of the other {f(sf['unmatched'])}, "
+      f"{f(sf['unmatched_not_in_parent'])} are not in `mgs_parent` and "
+      f"{f(sf['unmatched_cut_from_parent'])} failed our cuts.\n")
+    s322 = sf["features"]["SL322"]
+    w("The values are the pooled features before the top-k step, as in the paper. The top-k "
+      f"step would set some weak values to zero. For SL 322 it would zero "
+      f"{f(s322['zeroed_by_topk'])} values with a median of "
+      f"{s322['zeroed_by_topk_median_A']:.3f}. Most values are 0 or small, so 1.4826 MAD is "
+      "much smaller than the standard deviation for SL 17 and SL 322. We use the standard "
+      "deviation as the scale of these four dimensions.\n")
 
     w("## Categories\n")
     for c in man["categories"]:

@@ -14,7 +14,8 @@ projections of a high-dimensional manifold** of galaxy properties.
 - ~650k SDSS Main Galaxy Sample galaxies, each a point in a ~20-D space of standardized
   properties (stellar mass, SFR, sSFR, two metallicity calibrations, size, concentration,
   surface density, velocity dispersion, surface brightness, color, Dn4000, HδA, H I gas
-  fraction, group halo mass, BPT line ratios, Galaxy Zoo morphology, redshift).
+  fraction, group halo mass, BPT line ratios, Galaxy Zoo morphology, redshift, dust, and four
+  learned image features from the Wu (2025) sparse feature network).
 - The screen shows a **2-D linear projection** of that space. Users **rotate** it: a *grand
   tour* (smooth random rotation), a *manual tour* (drag a dimension's spoke on the
   "starburst" compass), or animated snaps to **canonical views** (MZR, FMR, SFMS,
@@ -73,7 +74,7 @@ Avoid neon, glassmorphism, and generic dashboards.
 
 Dimension **group colors** (tokens, compass spokes):
 `stars`→orange, `sf`→sky, `chem`→mustard, `struct`→teal, `kin`→coral, `gas`→`#8fd0e8`,
-`dust`→`#b98a5e`, `env`→plum, `lines`→olive, `obs`→cream-3, `learned`→cream (reserved for future embeddings).
+`dust`→`#b98a5e`, `env`→plum, `lines`→olive, `obs`→cream-3, `learned`→cream (the SFNet features, §6).
 
 ### 3.2 Typography (Google Fonts)
 
@@ -120,6 +121,7 @@ galaxy-manifold-viz/
 │   ├── export_web.py        → site/data/{manifest.json, dims/, cats/, meta/}
 │   ├── thumbs.py            representative subset → cutouts → site/data/thumbs/
 │   ├── literature.py        verified relations → site/data/literature.json
+│   ├── sfnet.py             Wu (2025) SFNet validation activations, matched by objID
 │   ├── REPORT.md            counts, match rates, sizes, caveats (generated/hand-written)
 │   ├── LITERATURE.md        relation table: equations, sources, conversions, verification
 │   └── cache/               gitignored intermediates
@@ -259,6 +261,10 @@ Standardized coordinate: **u = (x − center) / scale**. All projection math hap
 | 19 | `z` | z | z | | obs | spectroscopic redshift | 0.0–0.3 |
 | 20 | `AV` | A_V | A_V | mag | dust | `1.086 × TAUV_CONT` (galSpecIndx), stellar V-band attenuation from the MPA-JHU fit to the fiber continuum. Negative values are kept | −1.0–4.0 |
 | 21 | `HaHb` | log Hα/Hβ | Hα/Hβ | | dust | Balmer decrement log Hα/Hβ, S/N>3 in both (rescaled errors) | 0.2–1.2 |
+| 22 | `SL17` | A_SL17 | SL17 | | learned | Wu (2025) SFNet feature 17, activation / its validation-set max (paper scale). Validation galaxies only | 0–1 |
+| 23 | `SL138` | A_SL138 | SL138 | | learned | SFNet feature 138, same scale | 0–1 |
+| 24 | `SL157` | A_SL157 | SL157 | | learned | SFNet feature 157, same scale | 0–1 |
+| 25 | `SL322` | A_SL322 | SL322 | | learned | SFNet feature 322, same scale | 0–1 |
 
 Notes:
 - Line S/N uses the MPA-JHU recommended error rescalings. Check
@@ -267,8 +273,10 @@ Notes:
 - New dims are appended to the end of the manifest, never inserted, so a frame in an older
   share link can be padded with zero weights (§13.9). The rail orders dims by group, not by
   manifest position.
-- The code must handle up to **28 dims** (7 × vec4) without changes, so future learned
-  embeddings (group `learned`) can be appended to the manifest.
+- The code must handle up to **28 dims** (7 × vec4) without changes, so learned features
+  (group `learned`) can be appended to the manifest.
+- The SFNet dims are zero-inflated (A = 0 when a feature is off). Their `scale` is the std,
+  not 1.4826·MAD (`scale="std"` in `pipeline/config.py`), see §19.
 
 ## 7. Categories
 
@@ -713,6 +721,8 @@ Default tour set: `logM, logsSFR, D4000, logR50, C, mu50, pEl` (dims at least 96
 - Lim+17 halo masses come from abundance matching on group proxies, so the SHMR is partly
   built in by construction.
 - Galaxy Zoo 1 fractions are debiased vote fractions, not ground truth.
+- SFNet features exist only for the Wu (2025) validation set. These galaxies have S/N > 3 in
+  [NII], Hα, [OIII] and Hβ, and they are about 7.5% of the sample.
 
 ## 19. Deviations log
 
@@ -764,3 +774,7 @@ Default tour set: `logM, logsSFR, D4000, logR50, C, mu50, pEl` (dims at least 96
 - 2026-09-25 · ui · §13.9: `decodeFrame` accepts a frame with fewer dims than the data and pads it with zero weights, so links made before a dim was appended keep their view.
 - 2026-09-25 · ui · §14 default tour set gains `AV` (99.9% valid), giving `logM, logsSFR, D4000, logR50, C, mu50, pEl, AV`. The §14 list is updated to the set the code has used since launch. Links that carry `ts` keep their own set.
 - 2026-09-26 · ui · §14 default tour set drops `AV` again: `logM, logsSFR, D4000, logR50, C, mu50, pEl`. Links that carry `ts` keep their own set.
+- 2026-10-12 · data · Four dims in the `learned` group, appended after `HaHb`: `SL17`, `SL138`, `SL157` and `SL322`. They are the four features in Table 1 of Wu (2025, ApJ, 980, 183). That paper trains a ResNet18 with a top-k layer (k = 4) to predict the [NII], Hα, [OIII] and Hβ fluxes from gri cutouts. The values come from `activations.npy` in `../sparse-feature-networks`, which holds the 50,041 validation galaxies. Each value is the activation divided by its validation-set maximum, the paper's 0 to 1 scale. The values are the pooled features before the top-k step, because the paper's Table 1 counts those. `pipeline/sfnet.py` rebuilds the fastai split (seed 256) with numpy, since torch's CPU `randperm` is a Fisher-Yates shuffle on the MT19937 stream that numpy's legacy `RandomState` also produces. No torch is needed. The build stops if the activation fractions differ from Table 1, if the split disagrees with the sibling project's feature 17 catalog, or if the four features fail to predict the line ratios (R² 0.75 and 0.44 here). 49,237 validation galaxies match by objID. The published weights (`resnet18-topk_4-bpt_lines.pth`, identical to the Zenodo copy) do not reproduce `activations.npy`. The same eight features fire, but the per-feature correlations are 0.3 to 0.8 for every input normalization tried, including a fitted one. So the training galaxies have no values. The dims add 0.71 MB, and the dims total is 23.28 MB.
+- 2026-10-12 · data · §5.2 `scale`: a dim may set `scale="std"`. The SFNet dims do, because they are zero-inflated. For `SL17` and `SL322`, 1.4826·MAD is 0.025, about 1/4.5 of the std, so A = 0.5 would sit near u = 19 and would dominate any projection that includes it. No other dim changes.
+- 2026-10-12 · ui · The four SFNet dims use `ember` (the paper's Figure 2 uses cmasher's ember) on one shared range of 0 to 1, so equal colors mean equal activation in every feature. They join the `C` color cycle after `HaHb`. `GROUP_NAMES.learned` is now "learned image features".
+- 2026-10-12 · ui · Rail tiers for 26 dims and 3 categories. The rail needs 872 px at full size, so the 20 px tokens start below a viewport height of 980 px, the 18 px tokens below 845 px, and new 16 px tokens below 748 px. All tokens stay in view down to 662 px. A short of five characters (`SL138`, `Hα/Hβ`) gets the `tok-long` class, which sets its text tighter and smaller while it is the color variable, so the ◐ marker no longer overlaps it. The color dial sets such a short tighter as well (`cd-long`), so it fits the dial face.

@@ -10,7 +10,7 @@ import { setTip, refreshTip } from './tooltip.js';
 import { createKnob } from './knob.js';
 import { createZFilter } from './zfilter.js';
 import { openColorPopover, closeColorPopover } from './colorpop.js';
-import { catToken, chipFor, dimTitle, catCounts, catMissing, shortKids } from './uiconfig.js';
+import { catToken, chipFor, dimTitle, catCounts, catMissing, shortKids, shortText } from './uiconfig.js';
 import { sampleColormapHex } from '../gl/colormaps.js';
 import { CATEGORY_COLORS, NEUTRAL, groupColor } from '../config/style.js';
 
@@ -109,6 +109,8 @@ export function initConsole(app, mount, ui) {
     const c = app.colorInfo();
     dial.style.setProperty('--ring', ringCSS(c));
     colorGroup.dataset.mode = c.mode;
+    // five-character shorts (SL138, Hα/Hβ) are set tighter to fit the dial face
+    dialSym.classList.toggle('cd-long', c.mode === 'continuous' && shortText(c.spec.short).replace(/\s/g, '').length >= 5);
     if (c.mode === 'continuous') {
       dialSym.replaceChildren(...shortKids(c.spec.short));
       dial.style.setProperty('--gc', groupColor(c.spec.group));

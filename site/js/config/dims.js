@@ -4,8 +4,7 @@
 // Astronomical color convention: red = old / red / quenched / dense, blue = star-forming /
 // gas-rich / young. The diverging `redshift` map is centered (cream) on the physically
 // meaningful transition where there is one (green valley, Dn4000 ≈ 1.6, Σ★ ≈ 3×10⁸ …).
-// Dimensions missing from this table (e.g. future `learned` embeddings) get DEFAULT_DIM
-// and a quantile-based range.
+// Dimensions missing from this table get DEFAULT_DIM and a quantile-based range.
 
 import { valueFromQuantiles } from '../math/stats.js';
 
@@ -34,6 +33,12 @@ export const DIM_CONFIG = {
   z:        { cmap: 'redshift', reverse: false, tour: false, decimals: 3, range: [0.02, 0.2] },
   AV:       { cmap: 'ember',    reverse: false, tour: false, decimals: 2, range: [0.0, 1.6] },
   HaHb:     { cmap: 'ember',    reverse: false, tour: false, decimals: 3, range: [0.46, 0.8] },
+  // Wu (2025) SFNet activations on the paper's 0–1 scale, in `ember` like its Figure 2
+  // (0 = feature off). One shared range, so equal colors mean equal strength.
+  SL17:     { cmap: 'ember',    reverse: false, tour: false, decimals: 2, range: [0.0, 1.0] },
+  SL138:    { cmap: 'ember',    reverse: false, tour: false, decimals: 2, range: [0.0, 1.0] },
+  SL157:    { cmap: 'ember',    reverse: false, tour: false, decimals: 2, range: [0.0, 1.0] },
+  SL322:    { cmap: 'ember',    reverse: false, tour: false, decimals: 2, range: [0.0, 1.0] },
 };
 
 /** Default grand-tour set (§14), in canonical order. */
