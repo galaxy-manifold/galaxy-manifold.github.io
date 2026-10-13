@@ -17,7 +17,7 @@ export const GROUP_NAMES = {
   env: 'environment',
   lines: 'emission lines',
   obs: 'observation',
-  learned: 'learned embedding',
+  learned: 'learned image features',
 };
 
 /** Rail / dial label of a category. */
@@ -47,7 +47,8 @@ export function chipFor(spec, code) {
 /** Color-cycle order for the `C` key (keys missing from the data are skipped). */
 export const COLOR_CYCLE = [
   'logSFR', 'logsSFR', 'D4000', 'gr', 'OH', 'OH_PP04', 'logM', 'logR50', 'C', 'logSigma', 'pEl',
-  'logSigV', 'HdA', 'logMh', 'logfHI', 'AV', 'HaHb', 'z', 'cat:bpt', 'cat:env', 'cat:morph', null,
+  'logSigV', 'HdA', 'logMh', 'logfHI', 'AV', 'HaHb', 'SL17', 'SL138', 'SL157', 'SL322', 'z',
+  'cat:bpt', 'cat:env', 'cat:morph', null,
 ];
 
 export function dimColor(d) {

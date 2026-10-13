@@ -2,7 +2,7 @@
 
 Conceptualized by [John Wu](https://jwuphysics.github.io) and implemented by Claude Opus 5.5.
 
-Galaxy Manifold is a website for exploring galaxy scaling relations. It shows 657,057 galaxies from the SDSS Main Galaxy Sample. Each galaxy is a point in a space of 22 measured properties, e.g., stellar mass. The screen shows a two-dimensional linear projection of that space.
+Galaxy Manifold is a website for exploring galaxy scaling relations. It shows 657,057 galaxies from the SDSS Main Galaxy Sample. Each galaxy is a point in a space of 26 properties. 22 of them are measured, e.g., stellar mass. The other 4 are image features that a neural network learned. The screen shows a two-dimensional linear projection of that space.
 
 You can rotate the projection by hand, let it rotate on its own, or jump to a known view such as the mass-metallicity relation. Each jump is an animated rotation through the full space, so you can watch one relation turn into another.
 
@@ -12,6 +12,7 @@ You can rotate the projection by hand, let it rotate on its own, or jump to a kn
 - Press play on the compass to start a slow random rotation.
 - Click a view at the top of the page to jump to it. There are 14 views, including the mass-metallicity relation (MZR), the fundamental metallicity relation (FMR), the star-forming main sequence, the mass-size relation, the edge-on fundamental plane, the BPT diagram, and the stellar-to-halo mass relation.
 - Color the points by a third property or by a class. The classes are BPT class, central or satellite from the group catalog, and Galaxy Zoo morphology. The brightness of the plot shows how many galaxies are in each place, and the color shows their average value.
+- Color the points by one of four image features from the sparse feature network of Wu (2025). The network learned these features while it learned to predict emission line fluxes from galaxy images. For example, feature SL 157 is strong in red elliptical galaxies. Only about 7.5% of the galaxies have these features, so press the funnel next to the color legend to hide the others.
 - Turn on the running medians. With a color property set, the page draws one median line for each quarter of that property.
 - Turn on the literature relations. Each one appears only when the axes match its own axes.
 - Draw a lasso around a group of galaxies. The group stays highlighted when you rotate or change views.
@@ -30,9 +31,10 @@ The properties come from these sources:
 - The Lim et al. (2017) SDSS group catalog for group halo mass, central or satellite, and k-corrected g−r color. This catalog covers only the northern part of the SDSS footprint.
 - ALFALFA α.100 (Haynes et al. 2018) for H I gas fractions of detected galaxies.
 - Galaxy Zoo 1 (Lintott et al. 2008, 2011) for morphology.
+- The sparse feature network (SFNet) of Wu (2025) for four learned image features. The network predicts the [NII], Hα, [OIII] and Hβ fluxes from gri images. We use its features SL 17, SL 138, SL 157 and SL 322, which are the four features in Table 1 of the paper. Each value is on the 0 to 1 scale of the paper. Only the paper's validation galaxies have values, and 49,237 of them are in our sample. `pipeline/sfnet.py` explains how we match them.
 - The Legacy Survey viewer's SDSS layer for the galaxy images.
 
-`DESIGN.md` section 6 lists all 22 properties and how each one is computed. The page stores two metallicity scales. One is the MPA-JHU value (T04). The other uses the O3N2 line ratio (Pettini and Pagel 2004). The two scales give opposite signs for the dependence of metallicity on star formation rate at fixed mass, so the FMR view uses the PP04 scale.
+`DESIGN.md` section 6 lists all 26 properties and how each one is computed. The page stores two metallicity scales. One is the MPA-JHU value (T04). The other uses the O3N2 line ratio (Pettini and Pagel 2004). The two scales give opposite signs for the dependence of metallicity on star formation rate at fixed mass, so the FMR view uses the PP04 scale.
 
 The 24 literature relations are in `site/data/literature.json`. Each coefficient was checked against the arXiv source of its paper and converted to this sample's conventions (Kroupa IMF, H0 = 70, Petrosian r-band radii). `pipeline/LITERATURE.md` lists each equation, its source, and the conversions.
 
@@ -46,12 +48,13 @@ Then open http://localhost:8000. The page needs a web server because browsers bl
 
 ## Rebuild the data
 
-The pipeline reads local catalogs through the `catalog` and `data` links in the project root, which point into `../sdss-predict-everything`. It also reads the Lim et al. (2017) files from `~/Dropbox/data/xSAGA/lim+2017/catalogs/`.
+The pipeline reads local catalogs through the `catalog` and `data` links in the project root, which point into `../sdss-predict-everything`. It also reads the Lim et al. (2017) files from `~/Dropbox/data/xSAGA/lim+2017/catalogs/`, and the SFNet results from `../sparse-feature-networks`.
 
 The Python environment is managed with [uv](https://docs.astral.sh/uv/). `pyproject.toml` and `uv.lock` pin Python 3.12 and the package versions, so Linux and macOS builds use the same code. `uv run` creates `.venv` on first use. This folder syncs through Dropbox, so after the first run mark `.venv` as ignored, or the Linux and macOS environments will overwrite each other: `xattr -w com.dropbox.ignored 1 .venv` on macOS, `attr -s com.dropbox.ignored -V 1 .venv` on Linux.
 
 ```
 uv run pipeline/fetch_skyserver.py   # SkyServer queries, cached; rerun until it prints COMPLETE
+uv run pipeline/sfnet.py             # optional: check the SFNet validation split (build_catalog.py runs it too)
 uv run pipeline/build_catalog.py     # merge the catalogs and compute the properties
 uv run pipeline/export_web.py all    # write site/data, check it, and write REPORT.md
 uv run pipeline/thumbs.py all        # choose the 15,994 galaxies with images and make thumbnails
@@ -72,6 +75,7 @@ The workflow in `.github/workflows/pages.yml` runs the unit tests and publishes 
 - Petrosian R50 is smaller than the true half-light radius for concentrated galaxies.
 - The H I fractions are for ALFALFA detections only. At fixed stellar mass, they are higher than for all galaxies.
 - Lim et al. (2017) assign halo masses from a mass proxy of each group, so part of the stellar-to-halo mass relation comes from how the catalog was built.
+- The SFNet features exist only for the validation galaxies of Wu (2025). These galaxies all have S/N > 3 in [NII], Hα, [OIII] and Hβ. The published network weights do not reproduce the saved activations, so we could not add values for the other galaxies.
 
 ## Plans
 
@@ -82,7 +86,7 @@ These are not built yet:
 - Axes based on the large-scale environmental graph's top eigenvalues.
 - More axes showing standard morphology parmaeters beyond concentration like asymmetry/smoothness or Gini-M20.
 
-The page reads its properties from `site/data/manifest.json`, so a new axis needs only a new data column and a manifest entry. The code handles up to 28 properties and has a group reserved for learned axes.
+The page reads its properties from `site/data/manifest.json`, so a new axis needs only a new data column and a manifest entry. The code handles up to 28 properties. The `learned` group holds the four SFNet features, so there is room for two more properties.
 
 ## Layout
 

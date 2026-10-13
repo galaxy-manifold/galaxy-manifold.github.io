@@ -4,8 +4,8 @@ This file is written by `python3 pipeline/export_web.py report`. It reads `pipel
 
 ## Result
 
-- The export has 657,057 galaxies. Each galaxy has 22 dimensions, 3 categories and 5 metadata columns.
-- The dimension files take 22.57 MB after gzip. All of `site/data` takes 30.91 MB, before the thumbnails and `literature.json` are added.
+- The export has 657,057 galaxies. Each galaxy has 26 dimensions, 3 categories and 5 metadata columns.
+- The dimension files take 23.27 MB after gzip. All of `site/data` takes 31.62 MB, before the thumbnails and `literature.json` are added.
 - The export uses the full sample. No subsample was needed (see "File sizes").
 - The round trip check passed. An independent decoder read every file back and compared it with `pipeline/cache/galaxies.parquet`.
 - `pipeline/cache/galaxies.parquet` has the same rows in the same order as `site/data`. The thumbnails step reads it.
@@ -92,10 +92,22 @@ ALFALFA. `log_fgas` comes from `mgs_parent`. It is log M_HI minus log M★ for A
 | `z` | 0 to 0.3 | 657,057 | 0 | 0 |  | sdss |
 | `AV` | -1 to 4 | 656,431 | 626 | 626 |  | mpajhu |
 | `HaHb` | 0.2 to 1.2 | 303,073 | 353,984 | 270 | S/N ≤ 3 in Hα or Hβ | mpajhu |
+| `SL17` | 0 to 1 | 49,237 | 607,820 | 0 | not in the SFNet validation set | sfnet |
+| `SL138` | 0 to 1 | 49,237 | 607,820 | 0 | not in the SFNet validation set | sfnet |
+| `SL157` | 0 to 1 | 49,237 | 607,820 | 0 | not in the SFNet validation set | sfnet |
+| `SL322` | 0 to 1 | 49,237 | 607,820 | 0 | not in the SFNet validation set | sfnet |
 
 The J95 aperture correction to R50/8 changes log σ by a median of 0.030 dex.
 
 Dust. A_V is 1.086 × TAUV_CONT from galSpecIndx, the V-band optical depth of the MPA-JHU fit to the fiber continuum. 45,532 galaxies have TAUV_CONT < 0. We keep these values, because they scatter around zero and cutting them would bias the low end. The Balmer decrement log Hα/Hβ uses the same fluxes and rescaled errors as the BPT ratios. 9,933 of the 303,343 galaxies with S/N > 3 in both lines fall below the Case B value of 2.86. We keep them too.
+
+SFNet. The `learned` dimensions are feature activations from the sparse feature network (SFNet) of Wu (2025, ApJ, 980, 183). This network is a ResNet18 with a top-k layer (k = 4) before its last linear layer. It was trained to predict the [NII], Hα, [OIII] and Hβ fluxes from gri image cutouts. We use the four features in Table 1 of the paper. Each value is the activation divided by its largest value in the validation set, which is the 0 to 1 scale of the paper. A value of 0 means that the feature is off.
+
+Only the 50,041 validation galaxies of the paper's 250,207 galaxies have activations. `pipeline/sfnet.py` rebuilds the paper's random split (fastai RandomSplitter with seed 256). The fraction of validation galaxies where each feature is on is SL 17 62.9%, SL 138 87.0%, SL 157 95.8%, SL 322 62.9%. These fractions match Table 1. The split also matches the feature 17 catalog of the sparse-feature-networks project for all 31,488 galaxies in it. The published network weights do not reproduce the saved activations, so we did not compute activations for the training galaxies.
+
+We match the validation galaxies to our sample by objID. 49,237 of them are in our sample. Of the other 804, 803 are not in `mgs_parent` and 1 failed our cuts.
+
+The values are the pooled features before the top-k step, as in the paper. The top-k step would set some weak values to zero. For SL 322 it would zero 8,589 values with a median of 0.015. Most values are 0 or small, so 1.4826 MAD is much smaller than the standard deviation for SL 17 and SL 322. We use the standard deviation as the scale of these four dimensions.
 
 ## Categories
 
@@ -127,6 +139,10 @@ Every Lim+17 group with one member has that galaxy as its central (0 exceptions)
 | `dims/O3Hb.u16.gz` | 0.625 |
 | `dims/OH.u16.gz` | 0.476 |
 | `dims/OH_PP04.u16.gz` | 0.474 |
+| `dims/SL138.u16.gz` | 0.194 |
+| `dims/SL157.u16.gz` | 0.208 |
+| `dims/SL17.u16.gz` | 0.154 |
+| `dims/SL322.u16.gz` | 0.154 |
 | `dims/ba.u16.gz` | 1.289 |
 | `dims/gr.u16.gz` | 0.927 |
 | `dims/logM.u16.gz` | 1.219 |
@@ -140,16 +156,16 @@ Every Lim+17 group with one member has that galaxy as its central (0 exceptions)
 | `dims/mu50.u16.gz` | 1.181 |
 | `dims/pEl.u16.gz` | 1.278 |
 | `dims/z.u16.gz` | 1.272 |
-| `manifest.json` | 0.031 |
+| `manifest.json` | 0.036 |
 | `meta/dec.f32.gz` | 2.400 |
 | `meta/fiber.u16.gz` | 0.963 |
 | `meta/mjd.u16.gz` | 1.041 |
 | `meta/plate.u16.gz` | 1.089 |
 | `meta/ra.f32.gz` | 2.278 |
-| dims total | 22.566 |
-| all of `site/data` from this step | 30.908 |
+| dims total | 23.275 |
+| all of `site/data` from this step | 31.622 |
 
-Section 16 asks for dimension files of about 24 MB or less. The full sample needs 22.57 MB, which is 6% under that, so we kept every galaxy. The export subsamples only above 25.2 MB (`DIMS_GZ_TOLERANCE` in `config.py`). The dimension files use zlib level 9 with memLevel 9 and the Z_FILTERED strategy. This is a standard gzip stream, and it is about 1% smaller than the default settings. All gzip files have a zero timestamp and a fixed OS byte, so a rebuild from the same inputs gives identical bytes.
+Section 16 asks for dimension files of about 24 MB or less. The full sample needs 23.27 MB, which is 3% under that, so we kept every galaxy. The export subsamples only above 25.2 MB (`DIMS_GZ_TOLERANCE` in `config.py`). The dimension files use zlib level 9 with memLevel 9 and the Z_FILTERED strategy. This is a standard gzip stream, and it is about 1% smaller than the default settings. All gzip files have a zero timestamp and a fixed OS byte, so a rebuild from the same inputs gives identical bytes.
 
 ## Verification
 
@@ -178,6 +194,10 @@ dim O3Hb      n_valid  213,140 max|err| 2.29e-05 (step/2 2.29e-05) OK
 dim z         n_valid  657,057 max|err| 2.29e-06 (step/2 2.29e-06) OK
 dim AV        n_valid  656,431 max|err| 3.81e-05 (step/2 3.81e-05) OK
 dim HaHb      n_valid  303,073 max|err| 7.63e-06 (step/2 7.63e-06) OK
+dim SL17      n_valid   49,237 max|err| 7.63e-06 (step/2 7.63e-06) OK
+dim SL138     n_valid   49,237 max|err| 7.63e-06 (step/2 7.63e-06) OK
+dim SL157     n_valid   49,237 max|err| 7.63e-06 (step/2 7.63e-06) OK
+dim SL322     n_valid   49,237 max|err| 7.63e-06 (step/2 7.63e-06) OK
 cat bpt       codes {0: 0, 1: 150231, 2: 141160, 3: 40670, 4: 11071, 5: 9356, 6: 65672, 7: 238897} OK
 cat env       codes {0: 92523, 1: 338018, 2: 68297, 3: 158219, 4: 0, 5: 0, 6: 0, 7: 0} OK
 cat morph     codes {0: 23828, 1: 60035, 2: 184341, 3: 388853, 4: 0, 5: 0, 6: 0, 7: 0} OK
@@ -224,6 +244,7 @@ Quicklook. `pipeline/cache/quicklook.png` shows 12 density plots of the main rel
 - Galaxy Zoo 1 fractions are debiased vote fractions, not ground truth.
 - Lim+17 quantities (M_h, environment, ⁰·¹(g−r)) exist only in the northern cap at z ≤ 0.2.
 - T04 O/H values cluster on the MPA-JHU model grid, which shows as faint horizontal bands.
+- SFNet features exist only for the Wu (2025) validation set. These galaxies have S/N > 3 in [NII], Hα, [OIII] and Hβ, and they are about 7.5% of the sample.
 - The DR17 magnitude cut removes 25,946 regular MGS targets that are fainter than 17.77 in DR17. Near the flux limit the sample is slightly smaller than the original target list.
 - 46% of the Lim+17 matches are in groups outside the completeness volume (`i-o` = 0). Lim+17 gives those groups the mean halo mass for their proxy. The flag is kept as `lim_io` in `galaxies.parquet`.
 - 61% of the Galaxy Zoo 1 matches have the "uncertain" flag, because the flags need a debiased fraction above 0.8.
@@ -238,7 +259,7 @@ Quicklook. `pipeline/cache/quicklook.png` shows 12 density plots of the main rel
     - `ra` and `dec`, the DR17 photometric position. `ra_spec` and `dec_spec` are the MPA-JHU fiber position.
     - `z`, `petroR50_r` and `petroR90_r`. The radii are in arcsec.
     - `local_image`, the path of an existing 160 px cutout relative to the project root, or an empty string.
-    - The 22 dimension columns in physical units, with NaN when missing.
+    - The 26 dimension columns in physical units, with NaN when missing.
     - `bpt`, `env` and `morph` as uint8 codes, with 0 for missing.
     - Match details such as `lim_match`, `lim_io`, `lim_nmem`, `gz1_match` and `phot_query`.
 - The manifest has fields that section 5.2 does not list. These are `sample`, `caveats`, and the category fields other than `key`, `label` and `codes`. A category entry has the form `{key, label, file, dtype, missing, codes: [{code, label, name, color, n}], nmissing, desc, source}`.

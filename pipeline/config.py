@@ -33,6 +33,12 @@ GALSPEC_INDX = next((p for p in (ROOT / "data" / "galSpecIndx-dr8.fits",
 LIM_DIR = DROPBOX_DATA / "xSAGA" / "lim+2017" / "catalogs"
 LIM_GALAXY = LIM_DIR / "SDSS(M) galaxy.dat"
 LIM_GROUP = LIM_DIR / "SDSS(M) group.dat"
+# Wu (2025) SFNet: the sibling project, read only (its data/ and results/ are symlinks into
+# ~/Dropbox/data). See pipeline/sfnet.py.
+SFNET_ROOT = ROOT.parent / "sparse-feature-networks"
+SFNET_GALAXIES = SFNET_ROOT / "data" / "galaxies.csv"
+SFNET_ACTIVATIONS = SFNET_ROOT / "results" / "resnet18-topk_4-bpt_lines" / "activations.npy"
+SFNET_CHECK = SFNET_ROOT / "catalogs" / "sfnet_bpt_feature17_active.csv"
 
 # intermediates (all under pipeline/cache/, gitignored)
 PHOTO_PARQUET = CACHE / "skyserver_photo.parquet"   # SpecObjAll x PhotoObjAll, one row/spectrum
@@ -84,6 +90,13 @@ J95_EXP = 0.04
 FIBER_RADIUS_ARCSEC = 1.5
 SIGV_MIN, SIGV_MAX, SIGV_MAXFRACERR = 40.0, 500.0, 0.3
 
+# Wu (2025) SFNet: fastai RandomSplitter(0.2, seed=256), and the four features of its Table 1
+# (dimension key -> activation index) with their activation fractions in percent
+SFNET_SEED = 256
+SFNET_VALID_PCT = 0.2
+SFNET_FEATURES = {"SL17": 17, "SL138": 138, "SL157": 157, "SL322": 322}
+SFNET_TABLE1_FACTIVE = {"SL17": 62.9, "SL138": 87.0, "SL157": 95.8, "SL322": 62.9}
+
 # section 16 size budget: "dims (gz) around 24 MB or less" (raised from 20 MB when the dust
 # dims were added). Subsample only when the full sample overshoots by more than 5%; then
 # subsample to the budget itself.
@@ -133,6 +146,9 @@ SOURCES = [
     {"key": "j95", "label": "Jørgensen+95",
      "cite": "Jørgensen, I., Franx, M., & Kjærgaard, P. 1995, MNRAS, 276, 1341",
      "url": "https://ui.adsabs.harvard.edu/abs/1995MNRAS.276.1341J"},
+    {"key": "sfnet", "label": "SFNet (Wu 2025)",
+     "cite": "Wu, J. F. 2025, ApJ, 980, 183",
+     "url": "https://ui.adsabs.harvard.edu/abs/2025ApJ...980..183W"},
     {"key": "legacy", "label": "Legacy Surveys viewer",
      "cite": "Dey, A., et al. 2019, AJ, 157, 168",
      "url": "https://www.legacysurvey.org/viewer"},
@@ -156,6 +172,8 @@ CAVEATS = [
     "Galaxy Zoo 1 fractions are debiased vote fractions, not ground truth.",
     "Lim+17 quantities (M_h, environment, ⁰·¹(g−r)) exist only in the northern cap at z ≤ 0.2.",
     "T04 O/H values cluster on the MPA-JHU model grid, which shows as faint horizontal bands.",
+    "SFNet features exist only for the Wu (2025) validation set. These galaxies have S/N > 3 "
+    "in [NII], Hα, [OIII] and Hβ, and they are about 7.5% of the sample.",
 ]
 
 # ---------------------------------------------------------------------------------------
@@ -239,6 +257,26 @@ DIMS = [
          max=1.2, source="mpajhu",
          desc="Balmer decrement log Hα/Hβ, MPA-JHU fiber fluxes, S/N>3 in both (rescaled "
               "errors); 0.456 is Case B with no dust"),
+    # Wu (2025) SFNet features (pipeline/sfnet.py), appended so old share links stay valid.
+    # A = activation / its validation-set maximum, the paper's 0-1 scale. They are
+    # zero-inflated (A = 0 when the feature is off), and for SL17 and SL322 1.4826 MAD is
+    # ~1/4.5 of the std, so the standardizing scale is the std (scale="std").
+    dict(key="SL17", label="A_SL17", short="SL17", unit="", group="learned", min=0.0,
+         max=1.0, source="sfnet", scale="std",
+         desc="SFNet feature SL 17 (Wu 2025, Table 1): very blue, compact or merging; extreme "
+              "star formation, hard ionizing radiation. Fig. 3: +0.16 N2, +0.14 O3 per unit A"),
+    dict(key="SL138", label="A_SL138", short="SL138", unit="", group="learned", min=0.0,
+         max=1.0, source="sfnet", scale="std",
+         desc="SFNet feature SL 138 (Wu 2025, Table 1): low surface brightness, face-on; low "
+              "gas density, soft ionizing radiation. Fig. 3: −0.29 N2, +0.05 O3 per unit A"),
+    dict(key="SL157", label="A_SL157", short="SL157", unit="", group="learned", min=0.0,
+         max=1.0, source="sfnet", scale="std",
+         desc="SFNet feature SL 157 (Wu 2025, Table 1): red, elliptical; old stellar "
+              "populations, high mass, high metallicity. Fig. 3: +0.57 N2, +0.94 O3 per unit A"),
+    dict(key="SL322", label="A_SL322", short="SL322", unit="", group="learned", min=0.0,
+         max=1.0, source="sfnet", scale="std",
+         desc="SFNet feature SL 322 (Wu 2025, Table 1): blue, irregular; low mass, low "
+              "metallicity, star-forming. Fig. 3: −1.09 N2, +1.07 O3 per unit A"),
 ]
 DIM_KEYS = [d["key"] for d in DIMS]
 MAX_DIMS = 28   # the client supports up to 7 x vec4

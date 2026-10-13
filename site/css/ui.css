@@ -434,6 +434,8 @@ sub { font-size: 0.72em; line-height: 0; vertical-align: -0.28em; letter-spacing
 }
 .tok.color .tok-c { display: block; }
 .tok.color .tok-t { transform: translateX(-3px); }
+.tok-long .tok-t { letter-spacing: -0.03em; }
+.tok-long.color .tok-t { transform: translateX(-5px) scale(0.9); }
 
 .tok-cat { font: 400 7.5px/1 var(--font-display); letter-spacing: 0.1em; cursor: pointer; }
 .tok-cat .tok-t { padding-left: 0.1em; margin-top: -2px; }
@@ -763,6 +765,7 @@ html.dragging, html.dragging * { cursor: grabbing !important; }
 }
 .cd-sym { font: 500 10.5px/1 var(--font-ui); color: var(--cream); white-space: nowrap; max-width: 26px; overflow: hidden; text-align: center; }
 .cd-sym .i { width: 15px; height: 15px; color: var(--cream-3); }
+.cd-sym.cd-long { font-size: 9.5px; letter-spacing: -0.03em; max-width: 28px; }
 .con-color[data-mode="categorical"] .cd-sym { font: 400 6.5px/1 var(--font-display); letter-spacing: 0.08em; padding-left: 0.08em; }
 .cdial:hover .cd-face, .cdial[aria-expanded="true"] .cd-face { box-shadow: inset 0 0 0 1px var(--hair-35), 0 0 0 3px rgba(239, 230, 210, 0.05); }
 .cdial:hover .cd-ring { filter: brightness(1.15) saturate(1.1); }
@@ -1437,8 +1440,10 @@ html.dragging, html.dragging * { cursor: grabbing !important; }
   .con-toggles { gap: 2px; }
   .tog { width: 30px; height: 30px; }
 }
-/* short viewports: compress the rail so all tokens (≈ 700 px at full size) stay in view */
-@media (min-width: 760px) and (max-height: 809px) {
+/* short viewports: compress the rail so all tokens stay in view. With 26 dims and 3 categories
+   the rail needs 872 px at full size, 737 px at 20 px tokens, 640 px at 18 px and 554 px at
+   16 px, under 108 px of top bar and console. */
+@media (min-width: 760px) and (max-height: 979px) {
   .rail { gap: 7px; padding: 8px 0 10px; }
   .rail-group { gap: 3px; }
   .rail-cats { margin-top: 3px; padding-top: 8px; }
@@ -1448,12 +1453,21 @@ html.dragging, html.dragging * { cursor: grabbing !important; }
   .tok-cat .tok-t { margin-top: -1px; }
   .tok-stripe { bottom: 3px; }
 }
-@media (min-width: 760px) and (max-height: 699px) {
+@media (min-width: 760px) and (max-height: 844px) {
   .rail { gap: 5px; }
   .rail-group { gap: 2px; }
   .tok { height: 18px; border-radius: 9px; }
   .tok:not(.tok-cat) { font-size: 10.5px; }
   .tok-stripe { bottom: 2.5px; }
+}
+@media (min-width: 760px) and (max-height: 747px) {
+  .rail { gap: 4px; padding: 6px 0 8px; }
+  .rail-group { gap: 1px; }
+  .rail-cats { margin-top: 2px; padding-top: 6px; }
+  .rail-cats .rail-bar { top: 9px; }
+  .tok { height: 16px; border-radius: 8px; }
+  .tok:not(.tok-cat) { font-size: 10px; }
+  .tok-stripe { bottom: 2px; }
 }
 @media (max-width: 980px) {
   .tb-badge { display: none; }

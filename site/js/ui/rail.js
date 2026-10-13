@@ -25,7 +25,8 @@ export function initRail(app, mount, ui) {
       h('i', { class: 'rail-bar', 'aria-hidden': 'true' }));
     for (const d of g.dims) {
       const el = h('button', {
-        class: 'tok',
+        // five-character shorts (SL138, Hα/Hβ) are set tighter so the ◐ marker clears them
+        class: shortText(d.short).replace(/\s/g, '').length >= 5 ? 'tok tok-long' : 'tok',
         type: 'button',
         'data-key': d.key,
         'aria-haspopup': 'menu',
