@@ -14,11 +14,13 @@ Selection. MiniBatchKMeans with K = 16,000 clusters on the standardized features
 [logM, logsSFR, logR50, C, gr, D4000, z] (u = (x - center) / scale, the manifest's center
 and scale). Each cluster's members are ranked by distance to the centroid. The nearest one
 represents the cluster, except that among the 5 nearest a member with a local cutout is
-preferred when it lies within 1.5x the nearest distance. `gr` (Lim+17) is missing for 14% of
-the sample (the southern stripes and everything at z > 0.2). For the clustering only, those
-galaxies get a color predicted from their DR17 extinction-corrected model g-r and z (a
-cubic-by-quadratic polynomial fit to the galaxies that have both, robust scatter 0.001 mag).
-No exported value changes.
+preferred when it lies within 1.5x the nearest distance. For the clustering only, galaxies
+without `gr` get a color predicted from their DR17 extinction-corrected model g-r and z (a
+cubic-by-quadratic polynomial fit to the galaxies that have both). No exported value changes.
+The committed selection (2026-09-24) was made when `gr` came from Lim+17 and was missing for
+14% of the sample (the southern stripes and z > 0.2; robust scatter of the fit 0.001 mag).
+`gr` now comes from kcorrect and is missing for 0.3%, so rerunning `select` picks a
+different set.
 
 Sources. Local cutouts (data/images-sdss, data/images-extra) are 160x160 px at 0.262"/px
 from the Legacy Survey viewer's `sdss` layer. The rest are fetched from the same service
@@ -197,8 +199,8 @@ def _gr_design(c: np.ndarray, z: np.ndarray) -> np.ndarray:
 
 
 def impute_gr(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, dict]:
-    """Lim+17 0.1(g-r) where present; elsewhere a prediction from the DR17 extinction-corrected
-    model color and z. Returns (gr_filled, imputed_mask, fit_info)."""
+    """`gr` where present; elsewhere a prediction from the DR17 extinction-corrected model
+    color and z. Returns (gr_filled, imputed_mask, fit_info)."""
     gro = ((df["modelMag_g"] - df["extinction_g"])
            - (df["modelMag_r"] - df["extinction_r"])).to_numpy(np.float64)
     z = df["z"].to_numpy(np.float64)

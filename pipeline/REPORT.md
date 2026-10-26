@@ -5,7 +5,7 @@ This file is written by `python3 pipeline/export_web.py report`. It reads `pipel
 ## Result
 
 - The export has 657,057 galaxies. Each galaxy has 22 dimensions, 3 categories and 5 metadata columns.
-- The dimension files take 22.57 MB after gzip. All of `site/data` takes 30.91 MB, before the thumbnails and `literature.json` are added.
+- The dimension files take 22.85 MB after gzip. All of `site/data` takes 31.19 MB, before the thumbnails and `literature.json` are added.
 - The export uses the full sample. No subsample was needed (see "File sizes").
 - The round trip check passed. An independent decoder read every file back and compared it with `pipeline/cache/galaxies.parquet`.
 - `pipeline/cache/galaxies.parquet` has the same rows in the same order as `site/data`. The thumbnails step reads it.
@@ -75,7 +75,7 @@ ALFALFA. `log_fgas` comes from `mgs_parent`. It is log M_HI minus log M★ for A
 | `logsSFR` | -14 to -8 | 641,917 | 15,140 | 46 |  | mpajhu |
 | `D4000` | 0.8 to 2.6 | 656,256 | 801 | 229 | 572 with D4000_N_ERR ≤ 0 (all of them also outside the range) | mpajhu |
 | `HdA` | -6 to 12 | 655,173 | 1,884 | 657 | 1,227 with LICK_HD_A_ERR = -1 (value stored as exactly 0) | mpajhu |
-| `gr` | -0.2 to 1.4 | 562,275 | 94,782 | 1 | 2,258 Lim+17 placeholder colors; no Lim+17 match for the rest | lim17 |
+| `gr` | -0.2 to 1.4 | 654,949 | 2,108 | 104 | 1,901 kcorrect fits with χ² above 300; 103 without usable g or r photometry | kcorrect |
 | `OH` | 7.6 to 9.5 | 147,799 | 509,258 | 0 | MPA-JHU gives it for star-forming galaxies only | mpajhu |
 | `OH_PP04` | 7.8 to 9.2 | 147,422 | 509,635 | 0 | MPA class 1 with S/N > 3 in all four lines; 447 outside -1 < O3N2 < 1.9 | pp04 |
 | `logR50` | -1 to 2 | 657,020 | 37 | 37 |  | sdss |
@@ -128,7 +128,7 @@ Every Lim+17 group with one member has that galaxy as its central (0 exceptions)
 | `dims/OH.u16.gz` | 0.476 |
 | `dims/OH_PP04.u16.gz` | 0.474 |
 | `dims/ba.u16.gz` | 1.289 |
-| `dims/gr.u16.gz` | 0.927 |
+| `dims/gr.u16.gz` | 1.213 |
 | `dims/logM.u16.gz` | 1.219 |
 | `dims/logMh.u16.gz` | 1.167 |
 | `dims/logR50.u16.gz` | 1.178 |
@@ -146,10 +146,10 @@ Every Lim+17 group with one member has that galaxy as its central (0 exceptions)
 | `meta/mjd.u16.gz` | 1.041 |
 | `meta/plate.u16.gz` | 1.089 |
 | `meta/ra.f32.gz` | 2.278 |
-| dims total | 22.566 |
-| all of `site/data` from this step | 30.908 |
+| dims total | 22.852 |
+| all of `site/data` from this step | 31.194 |
 
-Section 16 asks for dimension files of about 24 MB or less. The full sample needs 22.57 MB, which is 6% under that, so we kept every galaxy. The export subsamples only above 25.2 MB (`DIMS_GZ_TOLERANCE` in `config.py`). The dimension files use zlib level 9 with memLevel 9 and the Z_FILTERED strategy. This is a standard gzip stream, and it is about 1% smaller than the default settings. All gzip files have a zero timestamp and a fixed OS byte, so a rebuild from the same inputs gives identical bytes.
+Section 16 asks for dimension files of about 24 MB or less. The full sample needs 22.85 MB, which is 5% under that, so we kept every galaxy. The export subsamples only above 25.2 MB (`DIMS_GZ_TOLERANCE` in `config.py`). The dimension files use zlib level 9 with memLevel 9 and the Z_FILTERED strategy. This is a standard gzip stream, and it is about 1% smaller than the default settings. All gzip files have a zero timestamp and a fixed OS byte, so a rebuild from the same inputs gives identical bytes.
 
 ## Verification
 
@@ -161,7 +161,7 @@ dim logSFR    n_valid  645,294 max|err| 4.96e-05 (step/2 4.96e-05) OK
 dim logsSFR   n_valid  641,917 max|err| 4.58e-05 (step/2 4.58e-05) OK
 dim D4000     n_valid  656,256 max|err| 1.37e-05 (step/2 1.37e-05) OK
 dim HdA       n_valid  655,173 max|err| 0.000137 (step/2 0.000137) OK
-dim gr        n_valid  562,275 max|err| 1.22e-05 (step/2 1.22e-05) OK
+dim gr        n_valid  654,949 max|err| 1.22e-05 (step/2 1.22e-05) OK
 dim OH        n_valid  147,799 max|err| 1.45e-05 (step/2 1.45e-05) OK
 dim OH_PP04   n_valid  147,422 max|err| 1.07e-05 (step/2 1.07e-05) OK
 dim logR50    n_valid  657,020 max|err| 2.29e-05 (step/2 2.29e-05) OK
@@ -207,7 +207,9 @@ Quicklook. `pipeline/cache/quicklook.png` shows 12 density plots of the main rel
 
 - Line errors. `mgs_parent` stores the raw MPA-JHU flux errors. We multiply them by the factors on the MPA-JHU DR7 data page before every S/N test. The factors are 1.882 for Hβ, 1.566 for [OIII]5007, 2.473 for Hα and 2.039 for [NII]6584. We checked them at https://wwwmpa.mpa-garching.mpg.de/SDSS/DR7/raw_data.html.
 - HδA failures. 1,227 galaxies have LICK_HD_A exactly 0 with an error of -1, which marks a failed measurement. We read LICK_HD_A_ERR and D4000_N_ERR from `data/galSpecIndx-dr8.fits` and require a positive error.
-- Lim+17 placeholder colors. Lim+17 gives galaxies far from the color and luminosity relation a fixed color. The values 0.832 and 0.889 appear 2,783 and 2,565 times in Lim+17, while the neighboring values appear about 800 and 1,270 times. At those two values we set the color to missing when the galaxy's own DR17 model g-r differs by more than 0.2 mag. This removed 2,258 colors, close to the excess of about 2,230 in our sample.
+- Lim+17 colors. `gr` used to come from Lim+17, whose colors stop at 0.221, so the sample had no galaxy bluer than that. Two things in Lim+17 remove the blue tail. First, its K-correction makes nearby blue galaxies too red. For star-forming galaxies with log sSFR above -9.8 and log M★ 9.6 to 9.9, the median Lim+17 color is 0.613 at z 0.02 to 0.03 and 0.453 at z 0.07 to 0.08. Our color for the same galaxies is 0.466 and 0.422. Second, Lim+17 gives galaxies far from the color and luminosity relation a fixed color, most often 0.832 or 0.889.
+- Our ⁰·¹(g−r). We fit the kcorrect v5 templates (Blanton & Roweis 2007) to the DR17 ugriz model magnitudes and their errors, with the extinction removed, the AB offsets applied, and minimum errors of 0.05, 0.02, 0.02, 0.02 and 0.03 mag in u, g, r, i and z. Then we K-correct g−r to z = 0.1. For the 562,780 galaxies with both colors, ours is 0.003 mag bluer at the median, with a scatter of 0.019 mag. Ours is 0.131 mag bluer at z below 0.03, and the two agree within 0.007 mag at z 0.06 to 0.2. Now 1,953 galaxies are bluer than 0.221. Of these, 541 had a Lim+17 placeholder color and 222 have no Lim+17 match.
+- kcorrect fit quality. The median fit χ² is 0.89. We set the color to missing when χ² is above 300, which affects 1,995 galaxies. In cutouts, the blue colors above that limit belong mostly to pieces of large nearby galaxies, halos of bright stars and satellite trails. The Lim+17 color stays in `galaxies.parquet` as `lim_color`, and the fit χ² is `kcorr_chi2`.
 - Repeat spectra. 2,137 galaxies had two spectra in the parent sample. See "Sample selection".
 - Special plates. 38,872 parent spectra are on special plates. See "Sample selection".
 - Duplicate column. The dimension `z` is the redshift column itself. The values are all inside its range.
@@ -222,7 +224,7 @@ Quicklook. `pipeline/cache/quicklook.png` shows 12 density plots of the main rel
 - H I fractions are ALFALFA detections only, which biases them gas-rich at fixed M★.
 - Lim+17 halo masses come from abundance matching on group proxies, so the SHMR is partly built in by construction.
 - Galaxy Zoo 1 fractions are debiased vote fractions, not ground truth.
-- Lim+17 quantities (M_h, environment, ⁰·¹(g−r)) exist only in the northern cap at z ≤ 0.2.
+- Lim+17 quantities (M_h, environment) exist only in the northern cap at z ≤ 0.2.
 - T04 O/H values cluster on the MPA-JHU model grid, which shows as faint horizontal bands.
 - The DR17 magnitude cut removes 25,946 regular MGS targets that are fainter than 17.77 in DR17. Near the flux limit the sample is slightly smaller than the original target list.
 - 46% of the Lim+17 matches are in groups outside the completeness volume (`i-o` = 0). Lim+17 gives those groups the mean halo mass for their proxy. The flag is kept as `lim_io` in `galaxies.parquet`.
@@ -241,5 +243,6 @@ Quicklook. `pipeline/cache/quicklook.png` shows 12 density plots of the main rel
     - The 22 dimension columns in physical units, with NaN when missing.
     - `bpt`, `env` and `morph` as uint8 codes, with 0 for missing.
     - Match details such as `lim_match`, `lim_io`, `lim_nmem`, `gz1_match` and `phot_query`.
+    - `kcorr_chi2`, the χ² of the kcorrect fit behind `gr`, and `lim_color`, the Lim+17 color that `gr` replaced.
 - The manifest has fields that section 5.2 does not list. These are `sample`, `caveats`, and the category fields other than `key`, `label` and `codes`. A category entry has the form `{key, label, file, dtype, missing, codes: [{code, label, name, color, n}], nmissing, desc, source}`.
 - When `export_web.py` runs again with the same row order, it keeps an existing `thumbs` block in the manifest. It checks the order with a hash of the objID sequence that it stores in `export_stats.json`. If the order changes, it resets `thumbs` to null and prints a warning, and `thumbs.py` must run again.

@@ -17,7 +17,7 @@ export const DIM_CONFIG = {
   logsSFR:  { cmap: 'redshift', reverse: true,  tour: true,  decimals: 2, range: [-12.3, -9.7] },
   D4000:    { cmap: 'redshift', reverse: false, tour: true,  decimals: 2, range: [1.15, 2.05] },
   HdA:      { cmap: 'redshift', reverse: true,  tour: false, decimals: 1, range: [-2.5, 6.5] },
-  gr:       { cmap: 'redshift', reverse: false, tour: false,  decimals: 3, range: [0.35, 1.0] },
+  gr:       { cmap: 'redshift', reverse: false, tour: false,  decimals: 3, range: [0.25, 1.1] },
   OH:       { cmap: 'ember',    reverse: false, tour: false,  decimals: 2, range: [8.5, 9.2] },
   OH_PP04:  { cmap: 'ember',    reverse: false, tour: false, decimals: 2, range: [8.3, 8.95] },
   logR50:   { cmap: 'sunset',   reverse: false, tour: true,  decimals: 2, range: [0.0, 1.1] },

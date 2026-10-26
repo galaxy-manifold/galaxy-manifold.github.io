@@ -126,6 +126,39 @@ def finite_or_nan(x, lo=-np.inf, hi=np.inf) -> np.ndarray:
     return np.where(np.isfinite(x) & (x > lo) & (x < hi), x, np.nan)
 
 
+def kcorrect_gr(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+    """0.1(g-r) from kcorrect v5 (Blanton & Roweis 2007): the default templates are fit to the
+    DR17 ugriz model magnitudes (asinh, extinction removed, shifted to AB) with
+    C.KCORR_ERR_FLOOR added in quadrature to the catalog errors. Returns (color, chi2), where
+    chi2 compares the fitted and observed fluxes in the five bands. Both are NaN where a band,
+    its error or z is missing; the color is also NaN without positive g and r fluxes."""
+    import kcorrect.kcorrect
+    import kcorrect.utils
+
+    bands = "ugriz"
+    mag = df[[f"modelMag_{b}" for b in bands]].to_numpy(np.float32)
+    err = df[[f"modelMagErr_{b}" for b in bands]].to_numpy(np.float32)
+    ext = df[[f"extinction_{b}" for b in bands]].to_numpy(np.float32)
+    z = df["z"].to_numpy(np.float32)
+    ok = (np.isfinite(mag) & np.isfinite(err) & (err > 0) & np.isfinite(ext)).all(1) & np.isfinite(z)
+    rows = np.flatnonzero(ok)
+    err = np.sqrt(err[ok] ** 2 + np.float32(C.KCORR_ERR_FLOOR) ** 2)
+    kc = kcorrect.kcorrect.KcorrectSDSS()
+    maggies, ivar = kcorrect.utils.sdss_asinh_to_maggies(mag=mag[ok], mag_err=err,
+                                                         extinction=ext[ok])
+    coeffs = kc.fit_coeffs(redshift=z[ok], maggies=maggies, ivar=ivar)   # applies the AB offsets
+    maggies, ivar = kc.to_ab(maggies=maggies, ivar=ivar)
+    k = kc.kcorrect(redshift=z[ok], coeffs=coeffs, band_shift=C.KCORR_BAND_SHIFT)
+    rec = kc.reconstruct(redshift=z[ok], coeffs=coeffs)
+    color = np.full(len(df), np.nan)
+    chi2 = np.full(len(df), np.nan)
+    chi2[rows] = ((rec - maggies) ** 2 * ivar).sum(1)
+    pos = (maggies[:, 1] > 0) & (maggies[:, 2] > 0)
+    color[rows[pos]] = (-2.5 * np.log10(maggies[pos, 1] / maggies[pos, 2])
+                        - (k[pos, 1] - k[pos, 2]))
+    return color, chi2
+
+
 # ---------------------------------------------------------------------------------------
 # build
 # ---------------------------------------------------------------------------------------
@@ -164,7 +197,8 @@ def build() -> tuple[pd.DataFrame, dict]:
     for c in ["petroMag_r", "petroR50_r", "petroR90_r", "modelMag_u", "modelMag_g",
               "modelMag_r", "modelMag_i", "modelMag_z", "extinction_u", "extinction_g",
               "extinction_r", "extinction_i", "extinction_z", "deVAB_r", "expAB_r",
-              "fracDeV_r"]:
+              "fracDeV_r", "modelMagErr_u", "modelMagErr_g", "modelMagErr_r", "modelMagErr_i",
+              "modelMagErr_z"]:
         df[c] = finite_or_nan(df[c], lo=-1000)
     df["r_petro_corr"] = df["petroMag_r"] - df["extinction_r"]
     stats["skyserver_match"] = {"matched": int(has_phot.sum()), "unmatched": int((~has_phot).sum()),
@@ -353,18 +387,18 @@ def build() -> tuple[pd.DataFrame, dict]:
         "hda_err_nonpositive": int((~ok_hd).sum()),
         "hda_err_nonpositive_in_range": int((~ok_hd & (hd >= -6) & (hd <= 12)).sum()),
         "hda_exact_zero_with_bad_err": int((~ok_hd & (hd == 0)).sum())}
-    # Lim+17 color, minus the fixed placeholder colors given to photometric outliers
-    lc = finite_or_nan(df["lim_color"])
-    gr_obs = ((df["modelMag_g"] - df["extinction_g"]) - (df["modelMag_r"] - df["extinction_r"])
-              ).to_numpy(float)
-    at_ph = np.isin(np.rint(lc * 1000), np.rint(np.array(C.LIM_COLOR_PLACEHOLDERS) * 1000))
-    placeholder = at_ph & ~(np.abs(gr_obs - lc) <= C.LIM_COLOR_PLACEHOLDER_TOL)
-    df["lim_color_placeholder"] = placeholder
-    D["gr"] = np.where(placeholder, np.nan, lc)
-    stats["lim_color_placeholders"] = {
-        "values": list(C.LIM_COLOR_PLACEHOLDERS), "at_placeholder_values": int(at_ph.sum()),
-        "set_missing": int(placeholder.sum()),
-        "kept_consistent_with_own_colour": int((at_ph & ~placeholder).sum())}
+    # 0.1(g-r) from our own kcorrect fits; missing where the templates cannot reproduce the
+    # five fluxes (broken photometry: shredded or star-contaminated objects, failed bands)
+    gr, chi2 = kcorrect_gr(df)
+    df["kcorr_chi2"] = chi2
+    misfit = chi2 > C.KCORR_CHI2_MAX
+    D["gr"] = np.where(misfit, np.nan, gr)
+    stats["kcorrect_gr"] = {
+        "fitted": int(np.isfinite(chi2).sum()), "not_fitted": int((~np.isfinite(chi2)).sum()),
+        "no_positive_g_r_flux": int((np.isfinite(chi2) & ~np.isfinite(gr)).sum()),
+        "chi2_max": C.KCORR_CHI2_MAX, "chi2_median": float(np.nanmedian(chi2)),
+        "misfit": int(misfit.sum()),
+        "misfit_with_color": int((misfit & np.isfinite(gr)).sum())}
     D["OH"] = finite_or_nan(df["oh"])
 
     # lines (rescaled errors)
@@ -445,6 +479,35 @@ def build() -> tuple[pd.DataFrame, dict]:
                         "above": int((fin & (x > spec["max"])).sum())}
         df[k] = np.where(inr, x, np.nan)
     stats["dims"] = dim_stats
+
+    # our 0.1(g-r) against Lim+17's (REPORT.md "Problems found and decisions")
+    lc = finite_or_nan(df["lim_color"])
+    gr = df["gr"].to_numpy(float)
+    zz = df["z"].to_numpy(float)
+    both = np.isfinite(lc) & np.isfinite(gr)
+    diff = gr - lc
+    lim_floor = float(np.nanmin(lc))
+    at_ph = np.isin(np.rint(lc * 1000), np.rint(np.array(C.LIM_COLOR_PLACEHOLDERS) * 1000))
+    # star-forming galaxies at fixed mass: their color should not depend on z
+    sf = ((df["logsSFR"] > -9.8) & (df["logM"] > 9.6) & (df["logM"] < 9.9)).to_numpy()
+    stats["gr_vs_lim17"] = {
+        "both": int(both.sum()), "median_diff": float(np.median(diff[both])),
+        "robust_sigma": float(1.4826 * np.median(np.abs(diff[both] - np.median(diff[both])))),
+        "median_diff_by_z": [
+            {"z": [a, b], "n": int((s := both & (zz >= a) & (zz < b)).sum()),
+             "median_diff": float(np.median(diff[s]))}
+            for a, b in [(0.005, 0.03), (0.03, 0.06), (0.06, 0.1), (0.1, 0.15), (0.15, 0.2)]],
+        "sf_fixed_mass_by_z": [
+            {"z": [a, a + 0.01], "n": int((s := both & sf & (zz >= a) & (zz < a + 0.01)).sum()),
+             "ours": float(np.median(gr[s])), "lim17": float(np.median(lc[s]))}
+            for a in (0.02, 0.04, 0.07)],
+        "lim_floor": lim_floor,
+        "ours_below_lim_floor": int((gr < lim_floor).sum()),
+        "ours_below_lim_floor_no_lim": int(((gr < lim_floor) & ~np.isfinite(lc)).sum()),
+        "lim_placeholder_values": list(C.LIM_COLOR_PLACEHOLDERS),
+        "lim_at_placeholder": int(at_ph.sum()),
+        "lim_at_placeholder_ours_valid": int((at_ph & np.isfinite(gr)).sum()),
+        "lim_at_placeholder_ours_below_floor": int((at_ph & (gr < lim_floor)).sum())}
 
     # =============================================================================
     # categories
@@ -549,10 +612,11 @@ def main() -> None:
              "petroMag_r", "extinction_r", "r_petro_corr", "petroR50_r", "petroR90_r",
              "modelMag_u", "modelMag_g", "modelMag_r", "modelMag_i", "modelMag_z",
              "extinction_u", "extinction_g", "extinction_i", "extinction_z",
+             "modelMagErr_u", "modelMagErr_g", "modelMagErr_r", "modelMagErr_i",
+             "modelMagErr_z", "kcorr_chi2",
              "deVAB_r", "expAB_r", "fracDeV_r", "kpc_per_arcsec",
              "v_disp", "v_disp_err", "sn_median", "bptclass", "d4000_n_err", "hdelta_a_err",
              "tauv_cont",
-             "lim_color_placeholder",
              "log_mstar", "log_sfr", "log_ssfr", "oh", "log_mhi", "log_fgas", "hi_w50", "agc",
              "gz1_match", "gz1_nvote", "gz1_p_el_debiased", "gz1_p_cs_debiased", "gz1_elliptical",
              "gz1_spiral", "gz1_uncertain",

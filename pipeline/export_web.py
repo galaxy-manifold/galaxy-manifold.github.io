@@ -472,8 +472,8 @@ def quicklook() -> None:
 
     # 5 color-mass
     ax = axs[4]
-    dens(ax, col["logM"], col["gr"], (8.0, 12.0), (0.1, 1.2), title="color – mass (Lim+17)",
-         xl="log M★ [M☉]", yl="⁰·¹(g−r)", yedges=np.arange(0.0995, 1.2, 0.009))
+    dens(ax, col["logM"], col["gr"], (8.0, 12.0), (-0.2, 1.2), title="color – mass (kcorrect)",
+         xl="log M★ [M☉]", yl="⁰·¹(g−r)")
     ax.legend(loc="upper left")
 
     # 6 mass-size split by C
@@ -591,6 +591,7 @@ def report() -> None:
     pc = lambda x, d=2: f"{100 * x:.{d}f}%"           # noqa: E731
     cz, cm, cr, cu = b["cut_z"], b["cut_logm"], b["cut_r"], b["cut_unique_objid"]
     lm, gz1, al, li = b["lim_match"], b["gz1_match"], b["alfalfa"], b["local_images"]
+    kg = b["kcorrect_gr"]
     north = (g["ra"] > 60) & (g["ra"] < 300) & (g["z"] <= 0.2)
     lim_north = float((g.loc[north, "lim_match"] != "").mean())
     gz_um = g["gz1_match"] == ""
@@ -750,8 +751,9 @@ def report() -> None:
                  "(all of them also outside the range)",
         "HdA": f"{f(b['index_errors']['hda_err_nonpositive'])} with LICK_HD_A_ERR = -1 "
                "(value stored as exactly 0)",
-        "gr": f"{f(b['lim_color_placeholders']['set_missing'])} Lim+17 placeholder colors; "
-              "no Lim+17 match for the rest",
+        "gr": f"{f(kg['misfit_with_color'])} kcorrect fits with χ² above {kg['chi2_max']:g}; "
+              f"{f(kg['no_positive_g_r_flux'] + kg['not_fitted'])} without usable g or r "
+              "photometry",
         "OH": "MPA-JHU gives it for star-forming galaxies only",
         "OH_PP04": f"MPA class 1 with S/N > 3 in all four lines; "
                    f"{f(b['pp04']['o3n2_out_of_validity'])} outside -1 < O3N2 < 1.9",
@@ -873,7 +875,10 @@ def report() -> None:
           "stellar populations.\n")
 
     w("## Problems found and decisions\n")
-    lc = b["lim_color_placeholders"]
+    gl = b["gr_vs_lim17"]
+    sfz = gl["sf_fixed_mass_by_z"]
+    dz = gl["median_diff_by_z"]
+    far = max(abs(d["median_diff"]) for d in dz if d["z"][0] >= 0.06)
     w("- Line errors. `mgs_parent` stores the raw MPA-JHU flux errors. We multiply them by "
       "the factors on the MPA-JHU DR7 data page before every S/N test. The factors are 1.882 "
       "for Hβ, 1.566 for [OIII]5007, 2.473 for Hα and 2.039 for [NII]6584. We checked them "
@@ -882,12 +887,32 @@ def report() -> None:
       "LICK_HD_A exactly 0 with an error of -1, which marks a failed measurement. We read "
       "LICK_HD_A_ERR and D4000_N_ERR from `data/galSpecIndx-dr8.fits` and require a positive "
       "error.")
-    w("- Lim+17 placeholder colors. Lim+17 gives galaxies far from the color and luminosity "
-      "relation a fixed color. The values 0.832 and 0.889 appear 2,783 and 2,565 times in "
-      "Lim+17, while the neighboring values appear about 800 and 1,270 times. At those two "
-      "values we set the color to missing when the galaxy's own DR17 model g-r differs by "
-      f"more than 0.2 mag. This removed {f(lc['set_missing'])} colors, close to the excess of "
-      "about 2,230 in our sample.")
+    w(f"- Lim+17 colors. `gr` used to come from Lim+17, whose colors stop at "
+      f"{gl['lim_floor']:.3f}, so the sample had no galaxy bluer than that. Two things in "
+      "Lim+17 remove the blue tail. First, its K-correction makes nearby blue galaxies too red. "
+      "For star-forming galaxies with log sSFR above -9.8 and log M★ 9.6 to 9.9, the median "
+      f"Lim+17 color is {sfz[0]['lim17']:.3f} at z {sfz[0]['z'][0]:.2f} to "
+      f"{sfz[0]['z'][1]:.2f} and {sfz[-1]['lim17']:.3f} at z {sfz[-1]['z'][0]:.2f} to "
+      f"{sfz[-1]['z'][1]:.2f}. Our color for the same galaxies is {sfz[0]['ours']:.3f} and "
+      f"{sfz[-1]['ours']:.3f}. Second, Lim+17 gives galaxies far from the color and luminosity "
+      f"relation a fixed color, most often {gl['lim_placeholder_values'][0]} or "
+      f"{gl['lim_placeholder_values'][1]}.")
+    w("- Our ⁰·¹(g−r). We fit the kcorrect v5 templates (Blanton & Roweis 2007) to the DR17 "
+      "ugriz model magnitudes and their errors, with the extinction removed, the AB offsets "
+      f"applied, and minimum errors of {', '.join(f'{e:g}' for e in C.KCORR_ERR_FLOOR[:-1])} "
+      f"and {C.KCORR_ERR_FLOOR[-1]:g} mag in u, g, r, i and z. "
+      f"Then we K-correct g−r to z = {C.KCORR_BAND_SHIFT:g}. For the {f(gl['both'])} galaxies "
+      f"with both colors, ours is {-gl['median_diff']:.3f} mag bluer at the median, with a "
+      f"scatter of {gl['robust_sigma']:.3f} mag. Ours is {-dz[0]['median_diff']:.3f} mag bluer "
+      f"at z below {dz[0]['z'][1]:g}, and the two agree within {far:.3f} mag at z 0.06 to 0.2. "
+      f"Now {f(gl['ours_below_lim_floor'])} galaxies are bluer than {gl['lim_floor']:.3f}. Of "
+      f"these, {f(gl['lim_at_placeholder_ours_below_floor'])} had a Lim+17 placeholder color "
+      f"and {f(gl['ours_below_lim_floor_no_lim'])} have no Lim+17 match.")
+    w(f"- kcorrect fit quality. The median fit χ² is {kg['chi2_median']:.2f}. We set the color "
+      f"to missing when χ² is above {kg['chi2_max']:g}, which affects {f(kg['misfit'])} "
+      "galaxies. In cutouts, the blue colors above that limit belong mostly to pieces of large "
+      "nearby galaxies, halos of bright stars and satellite trails. The Lim+17 color stays in "
+      "`galaxies.parquet` as `lim_color`, and the fit χ² is `kcorr_chi2`.")
     w(f"- Repeat spectra. {f(cu['drop'])} galaxies had two spectra in the parent sample. See "
       "\"Sample selection\".")
     w("- Special plates. 38,872 parent spectra are on special plates. See \"Sample "
@@ -926,6 +951,8 @@ def report() -> None:
     w("    - `bpt`, `env` and `morph` as uint8 codes, with 0 for missing.")
     w("    - Match details such as `lim_match`, `lim_io`, `lim_nmem`, `gz1_match` and "
       "`phot_query`.")
+    w("    - `kcorr_chi2`, the χ² of the kcorrect fit behind `gr`, and `lim_color`, the "
+      "Lim+17 color that `gr` replaced.")
     w("- The manifest has fields that section 5.2 does not list. These are `sample`, "
       "`caveats`, and the category fields other than `key`, `label` and `codes`. A category "
       "entry has the form `{key, label, file, dtype, missing, codes: [{code, label, name, "

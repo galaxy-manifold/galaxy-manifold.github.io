@@ -242,7 +242,7 @@ Standardized coordinate: **u = (x − center) / scale**. All projection math hap
 | 2 | `logsSFR` | log sSFR | sSFR | yr⁻¹ | sf | `SPECSFR_TOT_P50` | −14.0– −8.0 |
 | 3 | `D4000` | Dₙ4000 | D4k | | stars | `D4000_N` | 0.8–2.6 |
 | 4 | `HdA` | HδA | Hδ | Å | stars | `LICK_HD_A` | −6–12 |
-| 5 | `gr` | ⁰·¹(g−r) | g−r | mag | stars | Lim+17 k-corrected color at z=0.1 | −0.2–1.4 |
+| 5 | `gr` | ⁰·¹(g−r) | g−r | mag | stars | kcorrect v5 color K-corrected to z=0.1, fit to DR17 ugriz model magnitudes | −0.2–1.4 |
 | 6 | `OH` | 12+log(O/H) | O/H | | chem | MPA-JHU `OH_P50` (T04 Bayesian; SF galaxies only) | 7.6–9.5 |
 | 7 | `OH_PP04` | 12+log(O/H)ᴼ³ᴺ² | O/Hᴾ | | chem | PP04 O3N2: `8.73 − 0.32·O3N2` for BPT-SF galaxies with S/N>3 in Hβ, [OIII]5007, Hα, [NII]6584 and −1<O3N2<1.9 | 7.8–9.2 |
 | 8 | `logR50` | log R₅₀ | R₅₀ | kpc | struct | Petrosian r-band `petroR50_r` × kpc/″ (H0=70, Ωm=0.3) | −1.0–2.0 |
@@ -610,7 +610,7 @@ never shown while animating.
 ### 13.8 Splash & about
 The splash is the wordmark plus an animated starburst and orbit with a thin progress arc, and
 no text. The about overlay holds a one-line description, data credits (SDSS, MPA-JHU,
-Lim+17, ALFALFA α.100, Galaxy Zoo 1, Legacy Surveys), the literature references (generated
+kcorrect, Lim+17, ALFALFA α.100, Galaxy Zoo 1, Legacy Surveys), the literature references (generated
 from literature.json), keyboard shortcuts, and a short caveats list (§18).
 
 ### 13.9 URL state
@@ -764,3 +764,5 @@ Default tour set: `logM, logsSFR, D4000, logR50, C, mu50, pEl` (dims at least 96
 - 2026-09-25 · ui · §13.9: `decodeFrame` accepts a frame with fewer dims than the data and pads it with zero weights, so links made before a dim was appended keep their view.
 - 2026-09-25 · ui · §14 default tour set gains `AV` (99.9% valid), giving `logM, logsSFR, D4000, logR50, C, mu50, pEl, AV`. The §14 list is updated to the set the code has used since launch. Links that carry `ts` keep their own set.
 - 2026-09-26 · ui · §14 default tour set drops `AV` again: `logM, logsSFR, D4000, logR50, C, mu50, pEl`. Links that carry `ts` keep their own set.
+- 2026-10-26 · data · `gr` now comes from our own kcorrect v5 fits (Blanton & Roweis 2007) to the DR17 ugriz model magnitudes and their errors (`modelMagErr_*`, now fetched from SkyServer), K-corrected to z=0.1, instead of from Lim+17. The Lim+17 colors stop at 0.221, so the sample had no bluer galaxy. Their K-correction also makes nearby blue galaxies too red: for star-forming galaxies at log M★ 9.6–9.9, Lim+17 gives 0.613 at z 0.02–0.03 and 0.453 at z 0.07–0.08, and kcorrect gives 0.466 and 0.422. Where both exist they agree to 0.003 mag at the median (scatter 0.019 mag), and within 0.01 mag at z ≥ 0.06. A color is set missing when the fit χ² is above 300 (1,995 galaxies, mostly pieces of large nearby galaxies, star halos and satellite trails). This replaces the Lim+17 placeholder rule above. `gr` is valid for 654,949 galaxies (was 562,275), 1,953 of them bluer than 0.221, and it now covers the southern stripes and z > 0.2. `galaxies.parquet` keeps `lim_color` and adds `kcorr_chi2`. The thumbnail selection (§8) was made with the Lim+17 color and is unchanged. Rerunning `thumbs.py select` would now pick a different set.
+- 2026-10-26 · ui · The `gr` color range is now 0.25 to 1.1 (was 0.35 to 1.0). With the kcorrect colors, 2.1% of galaxies fell below 0.35, including all 1,953 bluer than 0.221, and 7.3% rose above 1.0. Now about 0.5% saturate at each end. The midpoint, where `redshift` is cream, stays at 0.675.
