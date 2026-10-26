@@ -6,7 +6,9 @@ spectrum, keyed on (plate, mjd, fiber):
 
   1. photometry: SpecObjAll x PhotoObjAll (via bestObjID) in chunks of ~30 plates, keeping
      spectra with the MGS target bits (legacy_target1 & 448). Each chunk is cached as a
-     gzipped CSV in pipeline/cache/skyserver/, so reruns are free.
+     gzipped CSV in pipeline/cache/skyserver/, so reruns are free. The model magnitude
+     errors feed the kcorrect fits for the 0.1(g-r) color; chunks cached before they were
+     added are refused by compile_photo() (delete them and rerun).
   2. follow-up: any mgs_parent spectrum still unmatched is queried explicitly by
      plate/mjd/fiber without the target-bit filter.
   3. zooSpec: the whole Galaxy Zoo 1 table (667,944 rows) in RA chunks, so that
@@ -40,7 +42,8 @@ PHOTO_COLS = ["objid", "specobjid", "plate", "mjd", "fiber", "z_dr17", "ra", "de
               "petroMag_r", "petroR50_r", "petroR90_r",
               "modelMag_u", "modelMag_g", "modelMag_r", "modelMag_i", "modelMag_z",
               "extinction_u", "extinction_g", "extinction_r", "extinction_i", "extinction_z",
-              "deVAB_r", "expAB_r", "fracDeV_r"]
+              "deVAB_r", "expAB_r", "fracDeV_r",
+              "modelMagErr_u", "modelMagErr_g", "modelMagErr_r", "modelMagErr_i", "modelMagErr_z"]
 ZOO_COLS = ["specobjid", "objid", "dr7objid", "ra", "dec", "nvote", "p_el", "p_cs",
             "p_el_debiased", "p_cs_debiased", "spiral", "elliptical", "uncertain"]
 STR_COLS = {"objid": str, "specobjid": str, "dr7objid": str}
@@ -51,7 +54,8 @@ PHOTO_SELECT = """SELECT CAST(p.objID AS VARCHAR(20)) AS objid,
  p.petroMag_r, p.petroR50_r, p.petroR90_r,
  p.modelMag_u, p.modelMag_g, p.modelMag_r, p.modelMag_i, p.modelMag_z,
  p.extinction_u, p.extinction_g, p.extinction_r, p.extinction_i, p.extinction_z,
- p.deVAB_r, p.expAB_r, p.fracDeV_r
+ p.deVAB_r, p.expAB_r, p.fracDeV_r,
+ p.modelMagErr_u, p.modelMagErr_g, p.modelMagErr_r, p.modelMagErr_i, p.modelMagErr_z
 FROM SpecObjAll s JOIN PhotoObjAll p ON s.bestObjID = p.objID"""
 
 ZOO_SELECT = """SELECT CAST(specobjid AS VARCHAR(20)) AS specobjid,
@@ -199,6 +203,9 @@ def compile_photo() -> pd.DataFrame:
     parts = []
     for f in files:
         part = read_chunk(f)
+        if list(part.columns) != PHOTO_COLS:
+            raise SystemExit(f"{f.name} was cached by an older query (columns differ): delete "
+                             f"the photo_*.csv.gz chunks in {C.SKYSERVER_CACHE} and rerun")
         if len(part):
             part["phot_query"] = "followup" if f.name.startswith("photo_followup_") else "mgs_bits"
             parts.append(part)

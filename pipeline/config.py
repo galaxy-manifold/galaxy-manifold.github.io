@@ -61,10 +61,17 @@ LIM_POS_MATCH_ARCSEC = 2.0         # positional fallback for galaxies without an
 LIM_POS_MATCH_DZ = 0.01            # sanity check on |z_CMB(Lim) - z(SDSS)| for positional matches
 # Lim+17 gives galaxies > 3 sigma off the color-luminosity median a fixed color. Two values
 # carry that excess (0.832: 2,783 vs ~800 in neighboring 0.001 bins; 0.889: 2,565 vs ~1,270).
-# At those values a color is treated as a placeholder (missing) when the galaxy's own DR17
-# extinction-corrected model g-r differs from it by more than this.
+# `gr` no longer uses the Lim+17 color; these are only counted in the comparison with it.
 LIM_COLOR_PLACEHOLDERS = (0.832, 0.889)
-LIM_COLOR_PLACEHOLDER_TOL = 0.2
+
+# 0.1(g-r) from kcorrect v5 fits to the DR17 ugriz model magnitudes. The error floors (mag,
+# added in quadrature) are those of kcorrect's IDL sdss_to_maggies (k_minerror). A fit with
+# chi2 above KCORR_CHI2_MAX does not reproduce the five fluxes, and the color is set missing.
+# Chosen from cutouts (2026-10-26): below it the blue tail is dwarfs and disks; above it most
+# blue colors belong to pieces of large nearby galaxies, star halos or satellite trails.
+KCORR_BAND_SHIFT = 0.1
+KCORR_ERR_FLOOR = (0.05, 0.02, 0.02, 0.02, 0.03)
+KCORR_CHI2_MAX = 300.0
 
 # MPA-JHU recommended line-flux error rescalings (verified 2026-09-24 against
 # https://wwwmpa.mpa-garching.mpg.de/SDSS/DR7/raw_data.html, "Scale uncertainty by").
@@ -114,6 +121,10 @@ SOURCES = [
              "346, 1055; Brinchmann, J., et al. 2004, MNRAS, 351, 1151; Tremonti, C. A., et al. "
              "2004, ApJ, 613, 898; Salim, S., et al. 2007, ApJS, 173, 267",
      "url": "https://www.sdss3.org/dr8/spectro/galspec.php"},
+    {"key": "kcorrect", "label": "kcorrect v5",
+     "cite": "Blanton, M. R., & Roweis, S. 2007, AJ, 133, 734; Blanton, M. R., et al. 2003, AJ, "
+             "125, 2348 (z = 0.1 bands)",
+     "url": "https://ui.adsabs.harvard.edu/abs/2007AJ....133..734B"},
     {"key": "lim17", "label": "Lim+17 SDSS(M) groups",
      "cite": "Lim, S. H., Mo, H. J., Lu, Y., Wang, H., & Yang, X. 2017, MNRAS, 470, 2982",
      "url": "https://ui.adsabs.harvard.edu/abs/2017MNRAS.470.2982L"},
@@ -154,7 +165,7 @@ CAVEATS = [
     "Lim+17 halo masses come from abundance matching on group proxies, so the SHMR is partly "
     "built in by construction.",
     "Galaxy Zoo 1 fractions are debiased vote fractions, not ground truth.",
-    "Lim+17 quantities (M_h, environment, ⁰·¹(g−r)) exist only in the northern cap at z ≤ 0.2.",
+    "Lim+17 quantities (M_h, environment) exist only in the northern cap at z ≤ 0.2.",
     "T04 O/H values cluster on the MPA-JHU model grid, which shows as faint horizontal bands.",
 ]
 
@@ -180,9 +191,9 @@ DIMS = [
          source="mpajhu",
          desc="Lick HδA absorption index, MPA-JHU LICK_HD_A, 3″ fiber"),
     dict(key="gr", label="⁰·¹(g−r)", short="g−r", unit="mag", group="stars", min=-0.2,
-         max=1.4, source="lim17",
-         desc="g−r color K-corrected to z=0.1, Lim+17 SDSS(M) galaxy catalog (northern cap, "
-              "z≤0.2)"),
+         max=1.4, source="kcorrect",
+         desc="g−r color K-corrected to z=0.1 with kcorrect v5, fit to DR17 ugriz model "
+              "magnitudes (extinction corrected)"),
     dict(key="OH", label="12+log(O/H)", short="O/H", unit="", group="chem", min=7.6, max=9.5,
          source="mpajhu",
          desc="Gas-phase metallicity, MPA-JHU OH_P50 (T04 Bayesian), star-forming galaxies only"),

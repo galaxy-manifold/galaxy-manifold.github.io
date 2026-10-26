@@ -27,7 +27,8 @@ The properties come from these sources:
 
 - MPA-JHU DR8 (Kauffmann et al. 2003, Brinchmann et al. 2004, Tremonti et al. 2004, Salim et al. 2007) for stellar mass, star formation rate, metallicity, emission lines, Dn4000, HδA and dust. The two dust properties are the stellar attenuation A_V from the fit to the fiber continuum, and the Balmer decrement Hα/Hβ, which measures dust in the ionized gas.
 - SDSS DR17 through the SkyServer SQL service for Petrosian sizes, magnitudes and axis ratios.
-- The Lim et al. (2017) SDSS group catalog for group halo mass, central or satellite, and k-corrected g−r color. This catalog covers only the northern part of the SDSS footprint.
+- kcorrect v5 (Blanton and Roweis 2007) for the g−r color. We fit it to the DR17 ugriz model magnitudes and K-correct the color to z = 0.1.
+- The Lim et al. (2017) SDSS group catalog for group halo mass and central or satellite. This catalog covers only the northern part of the SDSS footprint.
 - ALFALFA α.100 (Haynes et al. 2018) for H I gas fractions of detected galaxies.
 - Galaxy Zoo 1 (Lintott et al. 2008, 2011) for morphology.
 - The Legacy Survey viewer's SDSS layer for the galaxy images.
